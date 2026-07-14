@@ -20,8 +20,10 @@ do {                                                                            
 #ifdef _WIN32
 #define WIN_ONLY(x) x
 #else
-#include <gnu/libc-version.h>
 #include <sys/utsname.h>
+#ifdef __GLIBC__
+#include <gnu/libc-version.h>
+#endif
 #define WIN_ONLY(x)
 #endif
 
@@ -2540,12 +2542,20 @@ static void _print_test_env(void)
         if (uname(&name))
                 return;
 
+#ifdef __GLIBC__
         printf("System info:\n"
-               "  Linux kernel:  %s %s-bit\n"
+               "  Kernel:        %s %s-bit\n"
                "  Glibc version: %s\n\n",
                 name.release,
                 bits,
                 gnu_get_libc_version());
+#else /* !__GLIBC__ */
+        printf("System info:\n"
+               "  System:        %s %s %s-bit\n\n",
+                name.sysname,
+                name.release,
+                bits);
+#endif /* !__GLIBC__ */
 #endif /* !_WIN32 */
 }
 #endif /* FS_TEST_PRINT_ENV */

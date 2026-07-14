@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
 project(cfs_test LANGUAGES C)
 
+enable_testing()
+
 option(PRINT_ENV  "Print the test environment at the start" ON)
 option(USE_COLORS "Use colors in tests" OFF)
 
 add_executable(cfs_test "main.c")
 target_compile_definitions(cfs_test PRIVATE _TEST_ROOT="${CMAKE_CURRENT_LIST_DIR}/.TestRoot")
 target_include_directories(cfs_test PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../include")
+
+add_test(NAME cfs_test COMMAND cfs_test)
+set_tests_properties(cfs_test PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 
 if (NOT WIN32)
     target_compile_definitions(cfs_test PRIVATE _GNU_SOURCE)
