@@ -36,6 +36,13 @@ do {                                                                    \
         free(expected__);                                                \
 } while (0)
 
+#define EXPECT_PATH_EQ_LITERAL(actual, expected_literal)                  \
+do {                                                                    \
+        fs_path_t expected__ = fs_path_dupe((expected_literal), NULL);   \
+        EXPECT_EQ_PATH((actual), expected__);                            \
+        free(expected__);                                                \
+} while (0)
+
 TEST(boost_path, query_and_decomposition_examples)
 {
         fs_error_code_t ec;
@@ -43,12 +50,12 @@ TEST(boost_path, query_and_decomposition_examples)
 
         out = fs_path_parent_path(FS_MAKE_PATH("/foo/bar.txt"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("/foo"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("/foo"));
         free(out);
 
         out = fs_path_parent_path(FS_MAKE_PATH("/foo/bar/"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("/foo/bar"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("/foo/bar"));
         free(out);
 
         out = fs_path_parent_path(FS_MAKE_PATH("/"), &ec);
@@ -153,7 +160,7 @@ TEST(boost_path, lexically_proximate)
 
         out = fs_path_lexically_proximate(FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("x"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("a/b/c"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("a/b/c"));
         free(out);
 }
 
