@@ -19,5 +19,15 @@ copied verbatim.
   - decomposition examples (`parent_path`, `filename`, `stem`, `extension`)
   - representative `lexically_normal` cases
   - representative `lexically_relative` and `lexically_proximate` cases
+- `boost_path_modifiers_test.c` adapts focused modifier/comparison scenarios
+  from Boost's `test/path_test.cpp`:
+  - append and concat cases
+  - `replace_filename`, `replace_extension`, and `make_preferred`
+  - representative `compare` sign checks
+- `boost_copy_test.c` adapts core copy operation scenarios from Boost's
+  `test/copy_test.cpp`:
+  - default file and directory copies
+  - recursive and directories-only copies
+  - representative error-code paths
 
 Boost-originated material is covered by `third_party/boost/LICENSE_1_0.txt`.

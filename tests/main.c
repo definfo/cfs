@@ -620,7 +620,7 @@ TEST(fs_copy, non_empty_directory)
         FS_EXPECT_NO_EC(e);
 
         EXPECT_TRUE(fs_exists(dst, NULL));
-        EXPECT_TRUE(fs_is_empty(dst, NULL));
+        EXPECT_FALSE(fs_is_empty(dst, NULL));
 
         fs_remove_all(dst, NULL);
 }

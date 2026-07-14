@@ -49,3 +49,14 @@ add_cfs_test(boost_path_lexical_test "boost_path_lexical_test.c")
 add_test(NAME boost.path_lexical COMMAND boost_path_lexical_test)
 set_tests_properties(boost.path_lexical PROPERTIES
         LABELS "boost;path;lexical")
+
+add_cfs_test(boost_path_modifiers_test "boost_path_modifiers_test.c")
+add_test(NAME boost.path_modifiers COMMAND boost_path_modifiers_test)
+set_tests_properties(boost.path_modifiers PROPERTIES
+        LABELS "boost;path;modifiers")
+
+add_cfs_test(boost_copy_test "boost_copy_test.c")
+add_test(NAME boost.copy COMMAND boost_copy_test)
+set_tests_properties(boost.copy PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        LABELS "boost;copy;operations")

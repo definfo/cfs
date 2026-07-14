@@ -1884,13 +1884,17 @@ static fs_bool_t _fs_posix_copy_file_range(const int in, const int out, const si
         int err;
 
         while (result == 0 && (size_t)copied < len) {
-                const ssize_t written = copy_file_range(in, NULL, out, NULL, FS_SIZE_MAX, 0);
-                copied               += copied;
+                const size_t  remaining = len - (size_t)copied;
+                const ssize_t written   = copy_file_range(in, NULL, out, NULL, remaining, 0);
+                if (written == 0)
+                        break;
                 if (written == -1)
                         result = -1;
+                else
+                        copied += written;
         }
 
-        if (copied >= 0)
+        if ((size_t)copied == len)
                 return FS_TRUE;
 
         /* From GNU libstdc++:
@@ -1931,16 +1935,19 @@ static fs_bool_t _linux_sendfile(const int in, const int out, const size_t len, 
         int err;
 
         while (result == 0 && (size_t)copied < len) {
-                const ssize_t written = sendfile(out, in, &copied, FS_SIZE_MAX);
-                copied               += written;
+                const size_t  remaining = len - (size_t)copied;
+                const ssize_t written   = sendfile(out, in, &copied, remaining);
+                if (written == 0)
+                        break;
                 if (written == -1)
                         result = -1;
         }
 
-        if (copied >= 0)
+        if ((size_t)copied == len)
                 return FS_TRUE;
 
-        lseek(out, 0, SEEK_SET);
+        lseek(in, copied, SEEK_SET);
+        lseek(out, copied, SEEK_SET);
 
         err = errno;
         if (err != fs_posix_error_function_not_implemented
@@ -2855,11 +2862,6 @@ extern void fs_copy_opt(const fs_cpath_t from, const fs_cpath_t to, fs_copy_opti
         if (_FS_IS_ERROR_SET(ec))
                 return;
 
-        if (_fs_is_directory_t(ftype) && _FS_ANY_FLAG_SET(options, _fs_copy_options_In_recursive_copy)
-            && !_FS_ANY_FLAG_SET(options, fs_copy_options_recursive | fs_copy_options_directories_only)) {
-                return;
-        }
-
         if (!_fs_exists_t(ftype)) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_no_such_file_or_directory);
                 return;
@@ -2880,6 +2882,46 @@ extern void fs_copy_opt(const fs_cpath_t from, const fs_cpath_t to, fs_copy_opti
 
                         return;
                 }
+
+                if (!(_fs_is_regular_file_t(ftype) && _fs_is_directory_t(ttype))) {
+                        if (_FS_ANY_FLAG_SET(options, fs_copy_options_skip_existing))
+                                return;
+
+                        if (_FS_ANY_FLAG_SET(options, fs_copy_options_overwrite_existing)) {
+                                fs_remove_all(to, ec);
+                                if (_FS_IS_ERROR_SET(ec))
+                                        return;
+                                ttype = fs_file_type_not_found;
+                                goto copy;
+                        }
+
+                        if (_FS_ANY_FLAG_SET(options, fs_copy_options_update_existing)) {
+                                fs_file_time_type_t ftime;
+                                fs_file_time_type_t ttime;
+
+                                ftime = fs_last_write_time(from, ec);
+                                if (_FS_IS_ERROR_SET(ec))
+                                        return;
+
+                                ttime = fs_last_write_time(to, ec);
+                                if (_FS_IS_ERROR_SET(ec))
+                                        return;
+
+                                if (_fs_compare_time(&ftime, &ttime) <= 0)
+                                        return;
+
+                                fs_remove_all(to, ec);
+                                if (_FS_IS_ERROR_SET(ec))
+                                        return;
+
+                                ttype = fs_file_type_not_found;
+                                goto copy;
+                        }
+                }
+
+                if ((_fs_is_regular_file_t(ftype) && _fs_is_directory_t(ttype))
+                    || (_fs_is_directory_t(ftype) && _fs_is_directory_t(ttype)))
+                        goto copy;
 
                 if (_FS_ANY_FLAG_SET(options, fs_copy_options_skip_existing))
                         return;
@@ -2913,6 +2955,7 @@ extern void fs_copy_opt(const fs_cpath_t from, const fs_cpath_t to, fs_copy_opti
                 ttype = fs_file_type_not_found;
         }
 
+copy:
         fother = _fs_is_other_t(ftype);
         tother = _fs_is_other_t(ttype);
         if (fother || tother) {
@@ -2981,7 +3024,13 @@ extern void fs_copy_opt(const fs_cpath_t from, const fs_cpath_t to, fs_copy_opti
                                 return;
                 }
 
-                if (_FS_ANY_FLAG_SET(options, fs_copy_options_recursive)) {
+                if (_FS_ANY_FLAG_SET(options, _fs_copy_options_In_recursive_copy)
+                    && !_FS_ANY_FLAG_SET(options, fs_copy_options_recursive | fs_copy_options_directories_only)) {
+                        return;
+                }
+
+                if (!_FS_ANY_FLAG_SET(options, _fs_copy_options_In_recursive_copy)
+                    || _FS_ANY_FLAG_SET(options, fs_copy_options_recursive)) {
                         fs_dir_iter_t it;
                         fs_cpath_t    path;
                         fs_path_t     file;
@@ -4738,9 +4787,9 @@ extern void fs_path_replace_extension(fs_path_t *pp, const fs_cpath_t replacemen
         }
 
         repl = malloc((len + 1) * sizeof(fs_char_t));
+        _FS_STRCPY(repl, p);
         if (!dot)
                 _FS_STRCAT(repl, _FS_DOT);
-        _FS_STRCPY(repl, p);
         _FS_STRCAT(repl, replacement);
 
 #ifdef _WIN32
