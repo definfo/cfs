@@ -3548,6 +3548,8 @@ deref:
 
 extern fs_umax_t fs_file_size(const fs_cpath_t p, fs_error_code_t *ec)
 {
+        fs_file_status_t status;
+
 #ifdef _WIN32
         HANDLE        handle;
         LARGE_INTEGER size;
@@ -3571,8 +3573,14 @@ extern fs_umax_t fs_file_size(const fs_cpath_t p, fs_error_code_t *ec)
                 return (fs_umax_t)-1;
         }
 
-        if (!fs_is_regular_file(p, ec) || _FS_IS_ERROR_SET(ec)) {
-                if (!_FS_IS_ERROR_SET(ec))
+        status = fs_status(p, ec);
+        if (_FS_IS_ERROR_SET(ec))
+                return (fs_umax_t)-1;
+
+        if (!fs_is_regular_file_s(status)) {
+                if (status.type == fs_file_type_not_found)
+                        _FS_CFS_ERROR(ec, fs_cfs_error_no_such_file_or_directory);
+                else
                         _FS_CFS_ERROR(ec, fs_cfs_error_is_a_directory);
                 return (fs_umax_t)-1;
         }
@@ -3593,7 +3601,8 @@ extern fs_umax_t fs_file_size(const fs_cpath_t p, fs_error_code_t *ec)
 
         return (fs_umax_t)size.QuadPart;
 #else /* !_WIN32 */
-        if ((err = stat(p, &st))) {
+        if (stat(p, &st)) {
+                err = errno;
                 _FS_SYSTEM_ERROR(ec, err);
                 return (fs_umax_t)-1;
         }

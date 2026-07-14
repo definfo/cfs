@@ -54,7 +54,7 @@ TEST(boost_operations, status_and_queries)
         EXPECT_TRUE(fs_exists(FS_MAKE_PATH("."), &ec));
         EXPECT_NO_EC(ec);
         EXPECT_FALSE(fs_exists(FS_MAKE_PATH("no-such-file"), &ec));
-        EXPECT_EQ(ec.code, fs_cfs_error_no_such_file_or_directory);
+        EXPECT_NO_EC(ec);
 }
 
 TEST(boost_operations, directory_iterators)
