@@ -508,7 +508,19 @@ do {                                            \
 
 #define FS_DESTROY_RDIR_ITER FS_DESTROY_DIR_ITER
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* CFS_H */
+
 #ifdef CFS_IMPLEMENTATION
+#ifndef CFS_IMPLEMENTATION_ONCE
+#define CFS_IMPLEMENTATION_ONCE
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -780,6 +792,8 @@ typedef struct _fs_generic_reparse_buffer       _fs_generic_reparse_buffer_t;
 #endif
 
 #ifdef __APPLE__
+#include <AvailabilityMacros.h>
+
 #ifdef MAC_OS_X_VERSION_MIN_REQUIRED
 #define _FS_MACOSX MAC_OS_X_VERSION_MIN_REQUIRED
 #else
@@ -791,11 +805,19 @@ typedef struct _fs_generic_reparse_buffer       _fs_generic_reparse_buffer_t;
 #define _FS_TRUNCATE_AVAILABLE
 #define _FS_SYMLINKS_SUPPORTED
 
-#if _FS_MACOSX >= 1010
+/* Numeric literals, not MAC_OS_X_VERSION_10_xx names: pre-10.6 SDKs don't
+ * define the newer constants, and an undefined macro is 0 in #if, which
+ * would wrongly enable these features on old systems. See AvailabilityMacros.h.
+ */
+#if _FS_MACOSX >= 101000 /* MAC_OS_X_VERSION_10_10 */
 #define _FS_FCHMODAT_AVAILABLE
 #endif
 
-#if _FS_MACOSX >= 1050
+#if _FS_MACOSX >= 101300 /* MAC_OS_X_VERSION_10_13 */
+#define _FS_UTIMENSAT_AVAILABLE
+#endif
+
+#if _FS_MACOSX >= 1050 /* MAC_OS_X_VERSION_10_5 */
 #include <copyfile.h>
 #define _FS_MACOS_COPYFILE_AVAILABLE
 #endif
@@ -1952,7 +1974,7 @@ static void _fs_posix_copy_file(const fs_cpath_t from, const fs_cpath_t to, cons
                 goto clean;
         }
 #else
-        if (_fs_posix_chmod(to, fst->st_mode)) {
+        if (chmod(to, fst->st_mode)) {
                 _FS_SYSTEM_ERROR(ec, errno);
                 goto clean;
         }
@@ -3691,7 +3713,7 @@ extern fs_file_time_type_t fs_last_write_time(const fs_cpath_t p, fs_error_code_
 
 #if defined(__APPLE__)
         ret.seconds     = st.st_mtimespec.tv_sec;
-        ret.nanoseconds = (fs_uint)st.st_mtimespec.tv_nsec;
+        ret.nanoseconds = (fs_uint_t)st.st_mtimespec.tv_nsec;
 #elif defined(_FS_STATUS_MTIM_AVAILABLE)
         ret.seconds     = st.st_mtim.tv_sec;
         ret.nanoseconds = (fs_uint_t)st.st_mtim.tv_nsec;
@@ -3844,10 +3866,10 @@ extern void fs_permissions_opt(const fs_cpath_t p, fs_perms_t prms, const fs_per
 
 extern fs_path_t fs_read_symlink(const fs_cpath_t p, fs_error_code_t *ec)
 {
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(_FS_SYMLINKS_SUPPORTED)
         char    sbuf[PATH_MAX * 2];
         ssize_t size;
-#endif /* !_WIN32 */
+#endif /* !_WIN32 && _FS_SYMLINKS_SUPPORTED */
 
         _FS_CLEAR_ERROR_CODE(ec);
 
@@ -5566,10 +5588,9 @@ extern fs_recursive_dir_iter_t fs_recursive_directory_iterator_opt(const fs_cpat
         return ret;
 }
 
-#endif /* CFS_IMPLEMENTATION */
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CFS_H */
+#endif /* CFS_IMPLEMENTATION_ONCE */
+#endif /* CFS_IMPLEMENTATION */

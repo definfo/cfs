@@ -5,40 +5,60 @@
 
 A single header implementation of `std::filesystem`/`Boost.Filesystem` in `C89`.
 
-> ⚠️ Warning<br>
-> The library will not compile in a C++ environment (yet).<br>
-> Define **CFS_IMPLEMENTATION** in a **C** file instead.
-
 ### Usage:
 
-```c++
-// This should be done in a source file, not a header file.
+`cfs.h` is a single-header library in the [stb](https://github.com/nothings/stb)
+style: the same file provides both the declarations and the function bodies.
+The API is guarded by `#ifndef CFS_H`, and the implementation lives behind a
+separate `#ifdef CFS_IMPLEMENTATION` block with its own one-shot guard, so the
+header is safe to `#include` as many times and in any order you like.
 
-// For Linux:
-// #define _GNU_SOURCE 
-//  Already defined by most compilers, required for some functions.
-//  This should be defined as a compiler definition, not using a #define.
-//  If defined in a .c file, it should be above all #includes.
+To pull in the implementation, define **CFS_IMPLEMENTATION** in **exactly one**
+translation unit before including the header. Every other file just includes it
+normally to get the declarations:
 
-// For Windows:
-//  Be sure to use a toolchain that automatically defines _WIN32_WINNT
-//  to enable symlinks.
-
+```c
+// cfs_impl.c  --  the ONLY file that defines CFS_IMPLEMENTATION.
 #define CFS_IMPLEMENTATION
 #include <cfs/cfs.h>
 ```
 
+```c
+// any_other_file.c / your_header.h  --  declarations only, no macro.
+#include <cfs/cfs.h>
+```
+
+If you would rather not spell out the macro at all, include the companion
+header `cfs_impl.h` in that one implementation file instead. It simply defines
+`CFS_IMPLEMENTATION` for you and includes `cfs.h`:
+
+```c
+// cfs_impl.c -- the ONLY file that includes cfs_impl.h.
+#include <cfs/cfs_impl.h>
+```
+
+The same one-TU rule applies: include `cfs_impl.h` in exactly one translation
+unit, and use `cfs.h` everywhere else.
+
+Because the implementation carries its own guard, it no longer matters whether
+another header expands `<cfs/cfs.h>` (declarations only) before the file that
+defines `CFS_IMPLEMENTATION` — the bodies are still emitted exactly once.
+
+> ⚠️ Do **not** define `CFS_IMPLEMENTATION` in more than one TU (duplicate
+> symbols at link time), and do **not** define it in a header (it would leak the
+> implementation into every file that includes that header).
+
 ### OS requirements
 
-| Windows           | Linux |
-|:------------------|:------|
-| Windows **95+**\* | Any   |
+| Windows           | Linux | macOS               |
+|:------------------|:------|:--------------------|
+| Windows **95+**\* | Any   | macOS (**Darwin**)  |
 
-\* Only compatibility with **Windows 2000+** are tested in a VM. Older Windows
-versions are checked by modifying the `_WIN32_WINNT` value.
+Older Windows versions are checked by modifying the `_WIN32_WINNT` value.
 
-Some specific fixes are implemented for `FreeBSD` and `Darwin` but compatibility
-won't be tested.
+Linux, macOS, and Windows are tested in CI with CTest (see
+`.github/workflows/`). Some specific fixes are implemented for `FreeBSD`, whose
+compatibility is not covered by CI.
 
 ## Differences with std::filesystem
 
