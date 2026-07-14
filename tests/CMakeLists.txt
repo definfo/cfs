@@ -70,3 +70,9 @@ add_test(NAME boost.operations COMMAND boost_operations_test)
 set_tests_properties(boost.operations PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         LABELS "boost;operations")
+
+add_cfs_test(boost_long_path_test "boost_long_path_test.c")
+add_test(NAME boost.long_path COMMAND boost_long_path_test)
+set_tests_properties(boost.long_path PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        LABELS "boost;path;long")
