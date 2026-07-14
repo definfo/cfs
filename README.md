@@ -150,6 +150,12 @@ Pass `NULL` instead of `&ec` when the error details are intentionally ignored.
 As with `std::filesystem::exists(p, ec)`, a path that does not exist normally
 returns `FS_FALSE` without making nonexistence itself an error.
 
+Runtime argument validation is enabled by default even when `NDEBUG` is defined.
+Passing `NULL` for required path arguments reports
+`fs_cfs_error_invalid_argument` instead of dereferencing the pointer. Define
+`CFS_VALIDATE_ARGUMENTS` to `0` before including the implementation only if you
+intentionally want the old unchecked release-build behavior.
+
 ### Copying
 
 `fs_copy_options_t` mirrors
@@ -220,9 +226,9 @@ library adopts the most **common** or **logical** way across various implementat
 or a **custom** one.
 
  - On `Windows`, paths above `MAX_PATH` *(260 chars)* length are supported.
- - Empty paths `""` are **not** transformed in `"."` and `NULL` paths are treated as
-   an error in `Debug` (**fs_cfs_error_invalid_argument**) or **undefined behavior**
-   in `Release` mode.
+ - Empty paths `""` are **not** transformed in `"."`. `NULL` path arguments are
+   treated as **fs_cfs_error_invalid_argument** while argument validation is
+   enabled, including in release builds by default.
  - `fs_file_time_type` is based on the **UNIX** epoch on **all** OSs.
  - `fs_hard_link_count` never includes the file itself as a link, for
    consistency across operating systems.

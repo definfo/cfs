@@ -12,6 +12,10 @@ typedef char     fs_bool_t;
 #define FS_TRUE  1U
 #define FS_FALSE 0U
 
+#ifndef CFS_VALIDATE_ARGUMENTS
+#define CFS_VALIDATE_ARGUMENTS 1
+#endif
+
 #ifdef _WIN32
 #include <WinError.h>
 #include <wchar.h>
@@ -965,6 +969,12 @@ do {                                                            \
 
 #define _FS_CFS_ERROR(__ec__, __e__)    _FS_SET_ERROR(fs_error_type_cfs, __ec__, __e__)
 #define _FS_SYSTEM_ERROR(__ec__, __e__) _FS_SET_ERROR(fs_error_type_system, __ec__, __e__)
+
+/* Keep public API null-argument validation active even in release builds. */
+#if CFS_VALIDATE_ARGUMENTS && defined(NDEBUG)
+#define _FS_RESTORE_NDEBUG
+#undef NDEBUG
+#endif
 
 #ifndef NDEBUG
 #define _FS_IS_X_FOO_DECL(__what__)                                             \
@@ -2682,7 +2692,7 @@ extern fs_path_t fs_weakly_canonical(const fs_cpath_t p, fs_error_code_t *ec)
 #ifndef NDEBUG
         if (!p) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_invalid_argument);
-                return FS_FALSE;
+                return NULL;
         }
 #endif /* !NDEBUG */
 
@@ -2761,7 +2771,7 @@ extern fs_path_t fs_relative(const fs_cpath_t p, const fs_cpath_t base, fs_error
 #ifndef NDEBUG
         if (!p || !base) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_invalid_argument);
-                return FS_FALSE;
+                return NULL;
         }
 #endif /* !NDEBUG */
 
@@ -2797,7 +2807,7 @@ extern fs_path_t fs_proximate(const fs_cpath_t p, const fs_cpath_t base, fs_erro
 #ifndef NDEBUG
         if (!p || !base) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_invalid_argument);
-                return FS_FALSE;
+                return NULL;
         }
 #endif /* !NDEBUG */
 
@@ -4468,6 +4478,8 @@ extern fs_bool_t fs_status_known(const fs_file_status_t s)
 
 extern fs_path_t fs_path_dupe(const fs_cpath_t p, fs_error_code_t *ec)
 {
+        _FS_CLEAR_ERROR_CODE(ec);
+
 #ifndef NDEBUG
         if (!p) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_invalid_argument);
@@ -4600,6 +4612,8 @@ extern fs_path_t fs_path_concat(const fs_cpath_t p, const fs_cpath_t other, fs_e
 extern void fs_path_concat_s(fs_path_t *pp, const fs_cpath_t other, fs_error_code_t *ec)
 {
         fs_path_t p;
+
+        _FS_CLEAR_ERROR_CODE(ec);
 
 #ifndef NDEBUG
         if (!pp || !*pp || !other) {
@@ -5089,6 +5103,8 @@ extern fs_path_t fs_path_root_name(const fs_cpath_t p, fs_error_code_t *ec)
 
 extern fs_bool_t fs_path_has_root_name(const fs_cpath_t p, fs_error_code_t *ec)
 {
+        _FS_CLEAR_ERROR_CODE(ec);
+
 #ifndef NDEBUG
         if (!p) {
                 _FS_CFS_ERROR(ec, fs_cfs_error_invalid_argument);
@@ -5669,6 +5685,11 @@ extern fs_recursive_dir_iter_t fs_recursive_directory_iterator_opt(const fs_cpat
         ret.elems    = elems;
         return ret;
 }
+
+#ifdef _FS_RESTORE_NDEBUG
+#define NDEBUG
+#undef _FS_RESTORE_NDEBUG
+#endif
 
 #ifdef __cplusplus
 }
