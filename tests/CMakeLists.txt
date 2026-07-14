@@ -60,3 +60,9 @@ add_test(NAME boost.copy COMMAND boost_copy_test)
 set_tests_properties(boost.copy PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         LABELS "boost;copy;operations")
+
+add_cfs_test(boost_operations_test "boost_operations_test.c")
+add_test(NAME boost.operations COMMAND boost_operations_test)
+set_tests_properties(boost.operations PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        LABELS "boost;operations")

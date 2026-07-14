@@ -29,5 +29,12 @@ copied verbatim.
   - default file and directory copies
   - recursive and directories-only copies
   - representative error-code paths
+- `boost_operations_test.c` adapts selected operation scenarios from
+  Boost's `test/operations_test.cpp`:
+  - `resize_file` grow/shrink and missing-file error
+  - status of a nonexistent path (`file_not_found`, no error)
+  - `remove` of a file, an empty directory, and a missing path
+  - `remove_all` entry counts for files, trees, and missing paths
+  - `canonical` of an existent path and nonexistent-path errors
 
 Boost-originated material is covered by `third_party/boost/LICENSE_1_0.txt`.
