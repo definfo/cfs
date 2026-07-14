@@ -61,30 +61,34 @@ TEST(boost_operations, directory_iterators)
 {
         fs_error_code_t ec;
         fs_dir_iter_t   it;
-        fs_cpath_t      entry;
+        ptrdiff_t       i;
         int             entries;
 
         it = fs_directory_iterator(FS_MAKE_PATH("."), &ec);
         EXPECT_NO_EC(ec);
 
         entries = 0;
-        FOR_EACH_ENTRY_IN_DIR(entry, it) {
-                EXPECT_TRUE(fs_path_has_filename(entry, NULL));
+        for (i = 0; it.elems[i]; i++) {
+                EXPECT_TRUE(fs_path_has_filename(it.elems[i], NULL));
                 ++entries;
         }
-        FS_DESTROY_DIR_ITER(entry, it);
         EXPECT_EQ(entries, 2);
+        for (i = 0; it.elems[i]; i++)
+                free((void *)it.elems[i]);
+        free((void *)it.elems);
 
         it = fs_recursive_directory_iterator(FS_MAKE_PATH("."), &ec);
         EXPECT_NO_EC(ec);
 
         entries = 0;
-        FOR_EACH_ENTRY_IN_RDIR(entry, it) {
-                EXPECT_TRUE(fs_path_has_filename(entry, NULL));
+        for (i = 0; it.elems[i]; i++) {
+                EXPECT_TRUE(fs_path_has_filename(it.elems[i], NULL));
                 ++entries;
         }
-        FS_DESTROY_DIR_ITER(entry, it);
         EXPECT_EQ(entries, 3);
+        for (i = 0; it.elems[i]; i++)
+                free((void *)it.elems[i]);
+        free((void *)it.elems);
 }
 
 TEST(boost_operations, space_and_equivalent)
