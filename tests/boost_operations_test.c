@@ -6,7 +6,7 @@
  * under the Boost Software License, Version 1.0. See
  * third_party/boost/LICENSE_1_0.txt.
  *
- * This is a C89 adaptation for the CFS API, not a copy of the C++ tests.
+ * This is a C11 adaptation for the CFS API, not a copy of the C++ tests.
  * Where CFS deliberately differs from std::filesystem, the assertion follows
  * the CFS contract documented in README.md.
  */

@@ -2,7 +2,7 @@
 
 Source: <https://github.com/boostorg/filesystem/tree/develop/test>
 
-The Boost test suite is C++/Boost.Build based. CFS tests are C89 executables
+The Boost test suite is C++/Boost.Build based. CFS tests are C11 executables
 registered with CTest, so tests are migrated as focused C programs rather than
 copied verbatim.
 

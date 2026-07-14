@@ -108,29 +108,11 @@ typedef enum fs_posix_errors {
 #define _FS_32BIT
 #endif
 
-#ifdef __STDC_VERSION__
 #include <stdint.h>
 #define FS_UINTMAX_MAX UINTMAX_MAX
 #define FS_SIZE_MAX    INT64_MAX
 typedef uintmax_t      fs_umax_t;
 typedef uint32_t       fs_uint_t;
-#else /* !__STDC_VERSION__ */
-#ifdef _FS_64BIT
-#ifdef _WIN32
-#include <BaseTsd.h>
-typedef UINT64 fs_umax_t;
-typedef UINT32 fs_uint_t;
-#else
-typedef unsigned long fs_umax_t;
-typedef unsigned int  fs_uint_t;
-#endif
-#else /* !_FS_64BIT */
-typedef unsigned long fs_umax_t;
-typedef unsigned long fs_uint_t;
-#endif /* !_FS_64BIT */
-#define FS_UINTMAX_MAX ((fs_umax_t)~((fs_umax_t)0))
-#define FS_SIZE_MAX    ((fs_umax_t)(FS_UINTMAX_MAX >> 1))
-#endif /* !__STDC_VERSION__ */
 
 typedef fs_char_t       *fs_path_t;
 typedef const fs_char_t *fs_cpath_t;

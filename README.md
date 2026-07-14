@@ -1,9 +1,9 @@
 > ⚠️ Warning<br>
 > The library is currently being tested.
 
-# CFS: cross-platform filesystem API in C89
+# CFS: cross-platform filesystem API in C11
 
-A single header implementation of `std::filesystem`/`Boost.Filesystem` in `C89`.
+A single header implementation of `std::filesystem`/`Boost.Filesystem` in `C11`.
 
 ## Usage
 
@@ -13,7 +13,7 @@ configuration, diagnostics, and examples.
 
 ### Name
 
-**CFS** — a single-header C89 filesystem API modeled after C++17
+**CFS** — a single-header C11 filesystem API modeled after C++17
 `std::filesystem` and Boost.Filesystem.
 
 ### Synopsis
@@ -42,8 +42,8 @@ or include the convenience implementation header in that one file:
 Compile that implementation object with the rest of your program:
 
 ```sh
-cc -std=c89 -I/path/to/cfs/include -c cfs_impl.c
-cc -std=c89 -I/path/to/cfs/include -c main.c
+cc -std=c11 -I/path/to/cfs/include -c cfs_impl.c
+cc -std=c11 -I/path/to/cfs/include -c main.c
 cc main.o cfs_impl.o -o program
 ```
 
@@ -57,7 +57,7 @@ For a local checkout, the include path is this repository's `include`
 directory:
 
 ```sh
-cc -std=c89 -I/path/to/cfs/include ...
+cc -std=c11 -I/path/to/cfs/include ...
 ```
 
 In CMake, add the include directory to each target that uses CFS and add one
@@ -105,7 +105,7 @@ the translation unit that emits the implementation.
 
 CFS follows the C++17 [`std::filesystem`](https://en.cppreference.com/w/cpp/filesystem.html)
 lexical path model and filesystem operation names where practical, expressed as
-C89 functions and plain data types. The corresponding standard clauses are
+C11 functions and plain data types. The corresponding standard clauses are
 [`[fs.path]`](https://eel.is/c++draft/fs.path) for paths and
 [`[fs.op.funcs]`](https://eel.is/c++draft/fs.op.funcs) for filesystem
 operations.
@@ -279,7 +279,7 @@ named `std::filesystem::directory_options` values.
 To run the bundled CTest suite from a checkout:
 
 ```sh
-cmake -S tests -B tests/.build/readme -DCMAKE_C_STANDARD=90
+cmake -S tests -B tests/.build/readme -DCMAKE_C_STANDARD=11
 cmake --build tests/.build/readme
 ctest --test-dir tests/.build/readme
 ```
@@ -314,7 +314,7 @@ or a **custom** one.
 
 ## API inventory
 
-A function-by-function mapping of the C89 API declared in `cfs.h` to
+A function-by-function mapping of the C11 API declared in `cfs.h` to
 [`std::filesystem`](https://en.cppreference.com/w/cpp/filesystem.html)
 (C++17, `[fs.path]` and `[fs.op.funcs]`). Conventions:
 

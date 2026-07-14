@@ -10,6 +10,10 @@ function(add_cfs_test target source)
     add_executable(${target} "${source}")
     target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../include")
 
+    set_target_properties(${target} PROPERTIES
+            C_STANDARD 11
+            C_STANDARD_REQUIRED ON)
+
     if (NOT WIN32)
         target_compile_definitions(${target} PRIVATE _GNU_SOURCE)
     endif ()

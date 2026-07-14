@@ -6,7 +6,7 @@
  * distributed under the Boost Software License, Version 1.0. See
  * third_party/boost/LICENSE_1_0.txt.
  *
- * This is a C89 adaptation for the CFS API, not a copy of the C++ test.
+ * This is a C11 adaptation for the CFS API, not a copy of the C++ test.
  */
 
 #define CFS_IMPLEMENTATION
