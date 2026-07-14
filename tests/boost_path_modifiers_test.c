@@ -21,6 +21,13 @@ typedef struct modifier_case {
         fs_cpath_t expected;
 } modifier_case_t;
 
+typedef struct append_case {
+        fs_cpath_t path;
+        fs_cpath_t arg;
+        fs_cpath_t expected;
+        fs_bool_t  expected_preferred;
+} append_case_t;
+
 #define EXPECT_NO_EC(ec) EXPECT_EQ((ec).type, fs_error_type_none)
 
 #define EXPECT_PATH_EQ_PREFERRED(actual, expected_literal)                \
@@ -40,18 +47,19 @@ do {                                                                    \
 
 TEST(boost_path_modifiers, append)
 {
-        const modifier_case_t cases[] = {
-                { FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_MAKE_PATH("") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("bar"), FS_MAKE_PATH("bar") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH(""), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("/bar") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar") },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar") },
-                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH(""), FS_MAKE_PATH("foo/") },
-                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar") }
+        const append_case_t cases[] = {
+                { FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_TRUE },
+                { FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_TRUE },
+                { FS_MAKE_PATH(""), FS_MAKE_PATH("bar"), FS_MAKE_PATH("bar"), FS_TRUE },
+                { FS_MAKE_PATH(""), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
+                { FS_MAKE_PATH("/"), FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_TRUE },
+                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_TRUE },
+                { FS_MAKE_PATH("/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
+                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
+                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar"), FS_TRUE },
+                /* Existing separators are preserved; only inserted separators are preferred. */
+                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH(""), FS_MAKE_PATH("foo/"), FS_FALSE },
+                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar"), FS_FALSE }
         };
 
         fs_error_code_t ec;
@@ -63,13 +71,19 @@ TEST(boost_path_modifiers, append)
 
                 out = fs_path_append(cases[i].path, cases[i].arg, &ec);
                 EXPECT_NO_EC(ec);
-                EXPECT_PATH_EQ_PREFERRED(out, cases[i].expected);
+                if (cases[i].expected_preferred)
+                        EXPECT_PATH_EQ_PREFERRED(out, cases[i].expected);
+                else
+                        EXPECT_PATH_EQ_LITERAL(out, cases[i].expected);
                 free(out);
 
                 in_place = fs_path_dupe(cases[i].path, NULL);
                 fs_path_append_s(&in_place, cases[i].arg, &ec);
                 EXPECT_NO_EC(ec);
-                EXPECT_PATH_EQ_PREFERRED(in_place, cases[i].expected);
+                if (cases[i].expected_preferred)
+                        EXPECT_PATH_EQ_PREFERRED(in_place, cases[i].expected);
+                else
+                        EXPECT_PATH_EQ_LITERAL(in_place, cases[i].expected);
                 free(in_place);
         }
 }
