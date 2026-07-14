@@ -94,12 +94,12 @@ defines `CFS_IMPLEMENTATION`; the function bodies are still emitted once.
 Define CFS configuration macros before the first include of `<cfs/cfs.h>` in
 the translation unit that emits the implementation.
 
-| Macro | Meaning |
-| :---- | :------ |
-| `CFS_IMPLEMENTATION` | Emit function bodies from `cfs.h`; define in one translation unit only. |
-| `CFS_VALIDATE_ARGUMENTS` | Defaults to `1`. When enabled, required `NULL` path arguments report `fs_cfs_error_invalid_argument` instead of being dereferenced, even with `NDEBUG`. Define to `0` only if unchecked release-build behavior is wanted. |
-| `_WIN32_WINNT` | Selects the Windows API level used by the implementation. Older Windows support can be checked by lowering this value. |
-| `_GNU_SOURCE`, `_POSIX_C_SOURCE`, `_XOPEN_SOURCE` | Optional POSIX feature-test macros. Define them before any system header if your program wants the native interfaces they expose. CFS builds without requiring GNU extensions. |
+| Macro                                             | Meaning                                                                                                                                                                                                                   |
+| :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CFS_IMPLEMENTATION`                              | Emit function bodies from `cfs.h`; define in one translation unit only.                                                                                                                                                   |
+| `CFS_VALIDATE_ARGUMENTS`                          | Defaults to `1`. When enabled, required `NULL` path arguments report `fs_cfs_error_invalid_argument` instead of being dereferenced, even with `NDEBUG`. Define to `0` only if unchecked release-build behavior is wanted. |
+| `_WIN32_WINNT`                                    | Selects the Windows API level used by the implementation. Older Windows support can be checked by lowering this value.                                                                                                    |
+| `_GNU_SOURCE`, `_POSIX_C_SOURCE`, `_XOPEN_SOURCE` | Optional POSIX feature-test macros. Define them before any system header if your program wants the native interfaces they expose. CFS builds without requiring GNU extensions.                                            |
 
 ### Description
 
@@ -489,7 +489,7 @@ path overloads match C++'s `path, ec` forms.
 | `std::filesystem`     | CFS                    |
 | :-------------------- | :--------------------- |
 | `true` / `false`      | `FS_TRUE` / `FS_FALSE` |
-| portable path literal | `FS_MAKE_PATH(p)`    |
+| portable path literal | `FS_MAKE_PATH(p)`      |
 
 ### Not modeled
 

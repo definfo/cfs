@@ -1,115 +1,115 @@
 # Version 1.0.0-beta
 
- - [ ] Optimize functions avoiding multiple equal parsing calls
- - [X] Tests
- - [X] Rewrite in **C90** / **ANSI C**
- - [ ] Verify allocations
- - [X] Check parameters
- - [X] Verify minimum OS version off all API calls used (*Windows*, *Linux*, *macOS*, *BSD*)
- - [X] Make sure every call that returns path handles resizes (with for (;;) or similar)
- - [ ] Don't precompute all directory iterators members
- - [X] Fix mixed styling
- - [X] Add '\\\\?\\' if a path is > **MAX_PATH** on *Windows*
- - [X] System error enums (*Windows* and *Posix*)
+- [ ] Optimize functions avoiding multiple equal parsing calls
+- [x] Tests
+- [x] Rewrite in **C90** / **ANSI C**
+- [ ] Verify allocations
+- [x] Check parameters
+- [x] Verify minimum OS version off all API calls used (_Windows_, _Linux_, _macOS_, _BSD_)
+- [x] Make sure every call that returns path handles resizes (with for (;;) or similar)
+- [ ] Don't precompute all directory iterators members
+- [x] Fix mixed styling
+- [x] Add '\\\\?\\' if a path is > **MAX_PATH** on _Windows_
+- [x] System error enums (_Windows_ and _Posix_)
 
 # Version 1.0.0-alpha
 
- - [X] std::filesystem API
-   - [X] fs_absolute
-   - [X] fs_canonical
-   - [X] fs_weakly_canonical
-   - [X] fs_relative
-   - [X] fs_proximate
-   - [X] fs_copy
-   - [X] fs_copy_opt
-   - [X] fs_copy_file
-   - [X] fs_copy_file_opt
-   - [X] fs_copy_symlink
-   - [X] fs_create_directory
-   - [X] ds_create_directory_cp
-   - [X] fs_create_directories
-   - [X] fs_create_hard_link
-   - [X] fs_create_symlink
-   - [X] fs_create_directory_symlink
-   - [X] fs_current_path
-   - [X] fs_set_current_path
-   - [X] fs_exists_s
-   - [X] fs_exists
-   - [X] fs_equivalent
-   - [X] fs_file_size
-   - [X] fs_hard_link_count
-   - [X] fs_last_write_time
-   - [X] fs_set_last_write_time
-   - [X] fs_permissions
-   - [X] fs_permissions_opt
-   - [X] fs_read_symlink
-   - [X] fs_remove
-   - [X] fs_remove_all
-   - [X] fs_rename
-   - [X] fs_resize_file
-   - [X] fs_space
-   - [X] fs_status
-   - [X] fs_symlink_status
-   - [X] fs_temp_directory_path
-   - [X] fs_is_block_file_s
-   - [X] fs_is_block_file
-   - [X] fs_is_character_file_s
-   - [X] fs_is_character_file
-   - [X] fs_is_directory_s
-   - [X] fs_is_directory
-   - [X] fs_is_empty
-   - [X] fs_is_fifo_s
-   - [X] fs_is_fifo
-   - [X] fs_is_other_s
-   - [X] fs_is_other
-   - [X] fs_is_regular_file_s
-   - [X] fs_is_regular_file
-   - [X] fs_is_socket_s
-   - [X] fs_is_socket
-   - [X] fs_is_symlink_s
-   - [X] fs_is_symlink
-   - [X] fs_status_known
-   - [X] fs_path_append
-   - [X] fs_path_append_v
-   - [X] fs_path_append_s
-   - [X] fs_path_concat
-   - [X] fs_path_concat_s
-   - [X] fs_path_clear
-   - [X] fs_path_make_preferred
-   - [X] fs_path_remove_filename
-   - [X] fs_path_replace_filename
-   - [X] fs_path_replace_extension
-   - [X] fs_path_compare
-   - [X] fs_path_lexically_normal
-   - [X] fs_path_lexically_relative
-   - [X] fs_path_lexically_proximate
-   - [X] fs_path_root_name
-   - [X] fs_path_root_directory
-   - [X] fs_path_root_path
-   - [X] fs_path_relative_path
-   - [X] fs_path_parent_path
-   - [X] fs_path_filename
-   - [X] fs_path_stem
-   - [X] fs_path_extension
-   - [X] fs_path_has_root_path
-   - [X] fs_path_has_root_name
-   - [X] fs_path_has_root_directory
-   - [X] fs_path_has_relative_path
-   - [X] fs_path_has_parent_path
-   - [X] fs_path_has_filename
-   - [X] fs_path_has_stem
-   - [X] fs_path_has_extension
-   - [X] fs_path_is_absolute
-   - [X] fs_path_is_relative
-   - [X] fs_path_begin
-   - [X] fs_path_end
-   - [X] fs_path_iter_next
-   - [X] fs_path_iter_prev
-   - [X] fs_directory_iterator
-   - [X] fs_directory_iterator_opt
-   - [X] fs_dir_iter_next
-   - [X] fs_dir_iter_prev
-   - [X] fs_recursive_directory_iterator
-   - [X] fs_recursive_directory_iterator_opt
-   - [X] fs_recursive_dir_iter_next
-   - [X] fs_recursive_dir_iter_prev
+- [x] std::filesystem API
+  - [x] fs_absolute
+  - [x] fs_canonical
+  - [x] fs_weakly_canonical
+  - [x] fs_relative
+  - [x] fs_proximate
+  - [x] fs_copy
+  - [x] fs_copy_opt
+  - [x] fs_copy_file
+  - [x] fs_copy_file_opt
+  - [x] fs_copy_symlink
+  - [x] fs_create_directory
+  - [x] fs_create_directory_cp
+  - [x] fs_create_directories
+  - [x] fs_create_hard_link
+  - [x] fs_create_symlink
+  - [x] fs_create_directory_symlink
+  - [x] fs_current_path
+  - [x] fs_set_current_path
+  - [x] fs_exists_s
+  - [x] fs_exists
+  - [x] fs_equivalent
+  - [x] fs_file_size
+  - [x] fs_hard_link_count
+  - [x] fs_last_write_time
+  - [x] fs_set_last_write_time
+  - [x] fs_permissions
+  - [x] fs_permissions_opt
+  - [x] fs_read_symlink
+  - [x] fs_remove
+  - [x] fs_remove_all
+  - [x] fs_rename
+  - [x] fs_resize_file
+  - [x] fs_space
+  - [x] fs_status
+  - [x] fs_symlink_status
+  - [x] fs_temp_directory_path
+  - [x] fs_is_block_file_s
+  - [x] fs_is_block_file
+  - [x] fs_is_character_file_s
+  - [x] fs_is_character_file
+  - [x] fs_is_directory_s
+  - [x] fs_is_directory
+  - [x] fs_is_empty
+  - [x] fs_is_fifo_s
+  - [x] fs_is_fifo
+  - [x] fs_is_other_s
+  - [x] fs_is_other
+  - [x] fs_is_regular_file_s
+  - [x] fs_is_regular_file
+  - [x] fs_is_socket_s
+  - [x] fs_is_socket
+  - [x] fs_is_symlink_s
+  - [x] fs_is_symlink
+  - [x] fs_status_known
+  - [x] fs_path_append
+  - [x] fs_path_append_v
+  - [x] fs_path_append_s
+  - [x] fs_path_concat
+  - [x] fs_path_concat_s
+  - [x] fs_path_clear
+  - [x] fs_path_make_preferred
+  - [x] fs_path_remove_filename
+  - [x] fs_path_replace_filename
+  - [x] fs_path_replace_extension
+  - [x] fs_path_compare
+  - [x] fs_path_lexically_normal
+  - [x] fs_path_lexically_relative
+  - [x] fs_path_lexically_proximate
+  - [x] fs_path_root_name
+  - [x] fs_path_root_directory
+  - [x] fs_path_root_path
+  - [x] fs_path_relative_path
+  - [x] fs_path_parent_path
+  - [x] fs_path_filename
+  - [x] fs_path_stem
+  - [x] fs_path_extension
+  - [x] fs_path_has_root_path
+  - [x] fs_path_has_root_name
+  - [x] fs_path_has_root_directory
+  - [x] fs_path_has_relative_path
+  - [x] fs_path_has_parent_path
+  - [x] fs_path_has_filename
+  - [x] fs_path_has_stem
+  - [x] fs_path_has_extension
+  - [x] fs_path_is_absolute
+  - [x] fs_path_is_relative
+  - [x] fs_path_begin
+  - [x] fs_path_end
+  - [x] fs_path_iter_next
+  - [x] fs_path_iter_prev
+  - [x] fs_directory_iterator
+  - [x] fs_directory_iterator_opt
+  - [x] fs_dir_iter_next
+  - [x] fs_dir_iter_prev
+  - [x] fs_recursive_directory_iterator
+  - [x] fs_recursive_directory_iterator_opt
+  - [x] fs_recursive_dir_iter_next
+  - [x] fs_recursive_dir_iter_prev
