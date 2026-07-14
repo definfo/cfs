@@ -61,20 +61,20 @@ operations. The intentional differences are listed below.
 
 Common equivalents are:
 
-| `std::filesystem` | CFS |
-|:------------------|:----|
-| `std::filesystem::path` | `fs_path_t` (owned), `fs_cpath_t` (borrowed/read-only) |
-| `p / q`, `p /= q` | `fs_path_append(p, q, ec)`, `fs_path_append_s(&p, q, ec)` |
-| `p += q` | `fs_path_concat(p, q, ec)`, `fs_path_concat_s(&p, q, ec)` |
-| `p.lexically_normal()` | `fs_path_lexically_normal(p, ec)` |
-| `p.lexically_relative(base)` | `fs_path_lexically_relative(p, base, ec)` |
-| `p.lexically_proximate(base)` | `fs_path_lexically_proximate(p, base, ec)` |
-| `p.parent_path()`, `p.filename()` | `fs_path_parent_path(p, ec)`, `fs_path_filename(p, ec)` |
-| `p.stem()`, `p.extension()` | `fs_path_stem(p, ec)`, `fs_path_extension(p, ec)` |
-| `exists(p)`, `status(p)` | `fs_exists(p, ec)`, `fs_status(p, ec)` |
-| `copy(from, to, options)` | `fs_copy_opt(from, to, options, ec)` |
-| `directory_iterator(p)` | `fs_directory_iterator(p, ec)` |
-| `recursive_directory_iterator(p)` | `fs_recursive_directory_iterator(p, ec)` |
+| `std::filesystem`                 | CFS                                                       |
+| :-------------------------------- | :-------------------------------------------------------- |
+| `std::filesystem::path`           | `fs_path_t` (owned), `fs_cpath_t` (borrowed/read-only)    |
+| `p / q`, `p /= q`                 | `fs_path_append(p, q, ec)`, `fs_path_append_s(&p, q, ec)` |
+| `p += q`                          | `fs_path_concat(p, q, ec)`, `fs_path_concat_s(&p, q, ec)` |
+| `p.lexically_normal()`            | `fs_path_lexically_normal(p, ec)`                         |
+| `p.lexically_relative(base)`      | `fs_path_lexically_relative(p, base, ec)`                 |
+| `p.lexically_proximate(base)`     | `fs_path_lexically_proximate(p, base, ec)`                |
+| `p.parent_path()`, `p.filename()` | `fs_path_parent_path(p, ec)`, `fs_path_filename(p, ec)`   |
+| `p.stem()`, `p.extension()`       | `fs_path_stem(p, ec)`, `fs_path_extension(p, ec)`         |
+| `exists(p)`, `status(p)`          | `fs_exists(p, ec)`, `fs_status(p, ec)`                    |
+| `copy(from, to, options)`         | `fs_copy_opt(from, to, options, ec)`                      |
+| `directory_iterator(p)`           | `fs_directory_iterator(p, ec)`                            |
+| `recursive_directory_iterator(p)` | `fs_recursive_directory_iterator(p, ec)`                  |
 
 Unlike C++, CFS has no throwing overloads. Operations report failures through
 an optional `fs_error_code_t *`.
@@ -209,9 +209,9 @@ named `std::filesystem::directory_options` values.
 
 ## OS requirements
 
-| Windows           | Linux | macOS               |
-|:------------------|:------|:--------------------|
-| Windows **95+**\* | Any   | macOS (**Darwin**)  |
+| Windows           | Linux | macOS              |
+| :---------------- | :---- | :----------------- |
+| Windows **95+**\* | Any   | macOS (**Darwin**) |
 
 Older Windows versions are checked by modifying the `_WIN32_WINNT` value.
 
@@ -221,14 +221,14 @@ compatibility is not covered by CI.
 
 ## Differences with std::filesystem
 
-`std::filesystem` implementation across compilers is *extremely* inconsistent. This
+`std::filesystem` implementation across compilers is _extremely_ inconsistent. This
 library adopts the most **common** or **logical** way across various implementations,
 or a **custom** one.
 
- - On `Windows`, paths above `MAX_PATH` *(260 chars)* length are supported.
- - Empty paths `""` are **not** transformed in `"."`. `NULL` path arguments are
-   treated as **fs_cfs_error_invalid_argument** while argument validation is
-   enabled, including in release builds by default.
- - `fs_file_time_type` is based on the **UNIX** epoch on **all** OSs.
- - `fs_hard_link_count` never includes the file itself as a link, for
-   consistency across operating systems.
+- On `Windows`, paths above `MAX_PATH` _(260 chars)_ length are supported.
+- Empty paths `""` are **not** transformed in `"."`. `NULL` path arguments are
+  treated as **fs_cfs_error_invalid_argument** while argument validation is
+  enabled, including in release builds by default.
+- `fs_file_time_type` is based on the **UNIX** epoch on **all** OSs.
+- `fs_hard_link_count` never includes the file itself as a link, for
+  consistency across operating systems.
