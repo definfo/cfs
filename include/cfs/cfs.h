@@ -1300,6 +1300,10 @@ static _fs_char_cit_t _fs_find_parent_path_end(const fs_cpath_t p)
 
         _fs_char_cit_t last = p + _FS_STRLEN(p);
 
+        /* A path made only of a root-directory has no parent path. */
+        if (rel == last)
+                return p;
+
         while (rel != last && !_fs_is_separator(last[-1]))
                 --last;
 
@@ -1327,11 +1331,13 @@ static _fs_char_cit_t _fs_find_extension(const fs_cpath_t p, _fs_char_cit_t *con
 {
         const size_t len = _FS_STRLEN(p);
 
+        _fs_char_cit_t file;
         _fs_char_cit_t end;
         _fs_char_cit_t ext;
 
+        file = _fs_find_filename(p, NULL);
 #ifdef _WIN32
-        end = wcschr(_fs_find_filename(p, NULL), L':');
+        end = wcschr(file, L':');
         end = end ? end : p + len;
 #else
         end = p + len;
@@ -1340,21 +1346,22 @@ static _fs_char_cit_t _fs_find_extension(const fs_cpath_t p, _fs_char_cit_t *con
         if (extend)
                 *extend = end;
 
+        if (file == end)
+                return end;
+
+        /* Per std::filesystem/Boost, "." and ".." have no extension. */
+        if (end - file == 1 && file[0] == _FS_PREF('.'))
+                return end;
+
+        if (end - file == 2 && file[0] == _FS_PREF('.') && file[1] == _FS_PREF('.'))
+                return end;
+
+        /* A leading dot starts a POSIX hidden filename, not an extension. */
         ext = end;
-        if (p == ext)  /* Empty path or starts with an ADS */
-                return end;
-
-        /* If the path is /. or /.. */
-        if (--ext != p && *ext == _FS_PREF('.')
-            && (ext[-1] == _FS_PREF('.') || _fs_is_separator(ext[-1])))
-                return end;
-
-        while (p != --ext) {
-                if (_fs_is_separator(*ext))
-                        return end;
-
+        while (file != ext) {
+                --ext;
                 if (*ext == _FS_PREF('.'))
-                        return ext;
+                        return ext == file ? end : ext;
         }
 
         return end;
@@ -4836,8 +4843,11 @@ extern fs_path_t fs_path_lexically_normal(const fs_cpath_t p, fs_error_code_t *e
                         const _fs_char_cit_t name = _fs_find_filename(ret, rel);
 
                         if (_fs_has_filename(name, last)) {
-                                if (!_FS_IS_DOT_DOT(name))
-                                        fs_path_remove_filename(&ret, NULL);
+                                if (!_FS_IS_DOT_DOT(name)) {
+                                        const fs_path_t tmp = ret;
+                                        ret = fs_path_parent_path(ret, NULL);
+                                        free(tmp);
+                                }
                                 else
                                         fs_path_append_s(&ret, elem, NULL);
                         } else if (!_fs_has_relative_path(rel, last)) {
@@ -4872,6 +4882,13 @@ extern fs_path_t fs_path_lexically_normal(const fs_cpath_t p, fs_error_code_t *e
         }
 
         FS_DESTROY_PATH_ITER(it);
+
+        /* A non-empty path reduced entirely by dot-dot cancellation is ".". */
+        if (!_FS_IS_EMPTY(p) && _FS_IS_EMPTY(ret)) {
+                free(ret);
+                ret = _FS_ALLOC_DOT;
+        }
+
         return ret;
 }
 
@@ -4940,6 +4957,12 @@ extern fs_path_t fs_path_lexically_relative(const fs_cpath_t p, const fs_cpath_t
         }
 
         brdist = _fs_has_root_name(base, brtnend) + _fs_has_root_dir(brtnend, brtdend);
+        /* Relative paths with different first elements are unrelated. */
+        if (bdist == brdist && !_fs_has_root_dir(rtnend, rtdend)) {
+                out = _FS_ALLOC_EMPTY;
+                goto defer;
+        }
+
         while (bdist < brdist) {
                 fs_path_iter_next(&bit);
                 ++bdist;
@@ -4951,7 +4974,7 @@ extern fs_path_t fs_path_lexically_relative(const fs_cpath_t p, const fs_cpath_t
 
                 if (_FS_IS_EMPTY(elem) || _FS_IS_DOT(elem))
                         continue;
-                if (_FS_IS_DOT(elem))
+                if (_FS_IS_DOT_DOT(elem))
                         --n;
                 else
                         ++n;
@@ -4988,7 +5011,8 @@ extern fs_path_t fs_path_lexically_proximate(const fs_cpath_t p, const fs_cpath_
         _FS_CLEAR_ERROR_CODE(ec);
 
         rel = fs_path_lexically_relative(p, base, NULL);
-        if (rel)
+        /* lexically_proximate returns the original path when relative is empty. */
+        if (rel && !_FS_IS_EMPTY(rel))
                 return rel;
 
         free(rel);

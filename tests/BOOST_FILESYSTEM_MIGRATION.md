@@ -14,5 +14,10 @@ copied verbatim.
   - missing-file error-code behavior
   - directory and recursive-directory iterator smoke coverage
   - space and equivalent checks
+- `boost_path_lexical_test.c` adapts focused lexical path scenarios from
+  Boost's `test/path_test.cpp` and `test/relative_test.cpp`:
+  - decomposition examples (`parent_path`, `filename`, `stem`, `extension`)
+  - representative `lexically_normal` cases
+  - representative `lexically_relative` and `lexically_proximate` cases
 
 Boost-originated material is covered by `third_party/boost/LICENSE_1_0.txt`.

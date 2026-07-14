@@ -44,3 +44,8 @@ add_test(NAME boost.operations_smoke COMMAND boost_operations_smoke_test)
 set_tests_properties(boost.operations_smoke PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         LABELS "boost;operations;smoke")
+
+add_cfs_test(boost_path_lexical_test "boost_path_lexical_test.c")
+add_test(NAME boost.path_lexical COMMAND boost_path_lexical_test)
+set_tests_properties(boost.path_lexical PROPERTIES
+        LABELS "boost;path;lexical")
