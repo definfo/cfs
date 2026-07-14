@@ -6,31 +6,41 @@ enable_testing()
 option(PRINT_ENV  "Print the test environment at the start" ON)
 option(USE_COLORS "Use colors in tests" OFF)
 
-add_executable(cfs_test "main.c")
+function(add_cfs_test target source)
+    add_executable(${target} "${source}")
+    target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../include")
+
+    if (NOT WIN32)
+        target_compile_definitions(${target} PRIVATE _GNU_SOURCE)
+    endif ()
+
+    if (MSVC)
+        target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(${target} PRIVATE
+                "/wd4668" # Disabled due to WinAPI
+                "/wd4996" # Deprecation warning
+                "/wd4820" # Implicit padding
+                "/wd5045" # Spectre mitigation
+        )
+    endif ()
+
+    if (USE_COLORS)
+        target_compile_definitions(${target} PRIVATE FS_TESTS_USE_COLORS)
+    endif ()
+
+    if (PRINT_ENV)
+        target_compile_definitions(${target} PRIVATE FS_TEST_PRINT_ENV)
+    endif ()
+endfunction ()
+
+add_cfs_test(cfs_test "main.c")
 target_compile_definitions(cfs_test PRIVATE _TEST_ROOT="${CMAKE_CURRENT_LIST_DIR}/.TestRoot")
-target_include_directories(cfs_test PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../include")
 
 add_test(NAME cfs_test COMMAND cfs_test)
 set_tests_properties(cfs_test PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 
-if (NOT WIN32)
-    target_compile_definitions(cfs_test PRIVATE _GNU_SOURCE)
-endif ()
-
-if (MSVC)
-    target_compile_definitions(cfs_test PRIVATE _CRT_SECURE_NO_WARNINGS)
-    target_compile_options(cfs_test PRIVATE
-            "/wd4668" # Disabled due to WinAPI
-            "/wd4996" # Deprecation warning
-            "/wd4820" # Implicit padding
-            "/wd5045" # Spectre mitigation
-    )
-endif ()
-
-if (USE_COLORS)
-    target_compile_definitions(cfs_test PRIVATE FS_TESTS_USE_COLORS)
-endif ()
-
-if (PRINT_ENV)
-    target_compile_definitions(cfs_test PRIVATE FS_TEST_PRINT_ENV)
-endif ()
+add_cfs_test(boost_operations_smoke_test "boost_operations_smoke_test.c")
+add_test(NAME boost.operations_smoke COMMAND boost_operations_smoke_test)
+set_tests_properties(boost.operations_smoke PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        LABELS "boost;operations;smoke")
