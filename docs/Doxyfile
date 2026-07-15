@@ -1,0 +1,41 @@
+# Doxyfile -- CFS API reference.
+#
+# Generate the HTML reference:
+#   doxygen docs/Doxyfile        # -> docs/.build/html/index.html
+#
+# doxygen is provided by the nix devShell (pkgs.doxygen in flake.nix).
+# CI builds and publishes it to GitHub Pages (.github/workflows/docs.yml).
+
+PROJECT_NAME           = "CFS"
+PROJECT_BRIEF          = "Cross-platform filesystem API in C11 (std::filesystem in C11)"
+
+# Document the public headers plus the README, which is the landing page.
+INPUT                  = include README.md
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.md
+EXTENSION_MAPPING     += .md=markdown
+USE_MDFILE_AS_MAINPAGE = README.md
+
+OUTPUT_DIRECTORY       = docs/.build
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+HTML_OUTPUT            = html
+
+# C, not C++. Extract everything so undocumented symbols still appear
+# (marking them as gaps to fill); JAVADOC_AUTOBRIEF turns the first line of a
+# /** */ block into the brief.
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_UNDOC_MEMBER   = NO
+
+# Keep the implementation bodies (behind CFS_IMPLEMENTATION / CIO_IMPLEMENTATION)
+# out of the reference: leave those macros undefined so only the public
+# declarations are documented. SEARCH_INCLUDES=NO avoids pulling system headers.
+ENABLE_PREPROCESSING   = YES
+SEARCH_INCLUDES         = NO

@@ -35,32 +35,128 @@
 extern "C" {
 #endif
 
-/* Opaque streaming handle (pointer to an incomplete struct). */
+/**
+ * @brief Opaque streaming file handle (pointer to an incomplete struct).
+ *
+ * Returned by io_file_open(); pass it to io_file_read()/write()/getc()/gets()
+ * and release it with io_file_close(). It wraps a C @c FILE *.
+ */
 typedef struct io_file *io_file_t;
 
-// THINK: bit operation? (1 << 0), (1 << 1), etc.
+/**
+ * @brief Open mode for io_file_open(), combinable as a bitmask.
+ *
+ * Pick exactly one of `_read` / `_write` / `_append`, optionally OR-in
+ * `_text` for newline translation; the default is binary (std::ios::binary).
+ */
 typedef enum io_file_mode {
-        io_file_mode_none   = 0x0,
-        io_file_mode_read   = 0x1,  /* open for reading  ("rb") */
-        io_file_mode_write  = 0x2,  /* create/truncate  ("wb") */
-        io_file_mode_append = 0x4,  /* append            ("ab") */
-        io_file_mode_text   = 0x8   /* text mode (newline translation); default binary */
+        io_file_mode_none   = 0x0, /**< No mode (invalid for io_file_open). */
+        io_file_mode_read   = 0x1, /**< Open for reading (`"rb"`; `"r"` with _text). */
+        io_file_mode_write  = 0x2, /**< Create/truncate for writing (`"wb"`; `"w"` with _text). */
+        io_file_mode_append = 0x4, /**< Append (`"ab"`; `"a"` with _text). */
+        io_file_mode_text   = 0x8  /**< Text mode (newline translation); default is binary. */
 } io_file_mode_t;
 
-/* Whole-file: read into a malloc'd, NUL-terminated buffer (free it; *len is
- * the byte count excluding the NUL); write/append a buffer. */
+/**
+ * @brief Read a whole file into one malloc'd, NUL-terminated buffer.
+ *
+ * Opens, sizes, and reads @p p in one call. @p *len receives the byte count
+ * excluding the NUL terminator. free() the returned buffer. Fails cleanly
+ * (returns @c NULL) on a non-openable path, e.g. a directory (EISDIR).
+ *
+ * @param p   Path to read (native fs_char_t *; NULL/empty is invalid).
+ * @param len Out: byte count of the contents, excluding the NUL.
+ * @param ec  Out: error details, or NULL to ignore (fs_error_type_system on OS failure).
+ * @return The file's bytes in a malloc'd, NUL-terminated buffer, or NULL.
+ */
 extern char      *io_read_file(fs_cpath_t p, fs_umax_t *len, fs_error_code_t *ec);
+
+/**
+ * @brief Write a whole buffer to @p p, creating or truncating it.
+ *
+ * @param p   Path to write (create/truncate).
+ * @param buf Bytes to write (NULL allowed only if @p len is 0).
+ * @param len Number of bytes to write.
+ * @param ec  Out: error details, or NULL.
+ * @return FS_TRUE on success, FS_FALSE on failure.
+ */
 extern fs_bool_t  io_write_file(fs_cpath_t p, const char *buf, fs_umax_t len, fs_error_code_t *ec);
+
+/**
+ * @brief Append a buffer to @p p, creating it if absent.
+ *
+ * @param p   Path to append to (created if it does not exist).
+ * @param buf Bytes to append (NULL allowed only if @p len is 0).
+ * @param len Number of bytes to append.
+ * @param ec  Out: error details, or NULL.
+ * @return FS_TRUE on success, FS_FALSE on failure.
+ */
 extern fs_bool_t  io_append_file(fs_cpath_t p, const char *buf, fs_umax_t len, fs_error_code_t *ec);
 
-/* Streaming handle. io_file_read returns bytes read (0 at EOF or on
- * error; check ec to tell them apart). io_file_getc returns a byte 0..255
- * or -1 (EOF/error; check ec). io_file_gets returns buf or NULL at EOF. */
+/**
+ * @brief Open @p p for streaming read/write/append, returning a handle.
+ *
+ * @param p    Path to open.
+ * @param mode One of io_file_mode_read / _write / _append, optionally OR-in
+ *             io_file_mode_text; the default is binary.
+ * @param ec   Out: error details, or NULL.
+ * @return A new io_file_t handle, or NULL on failure (ec set).
+ */
 extern io_file_t  io_file_open(fs_cpath_t p, io_file_mode_t mode, fs_error_code_t *ec);
+
+/**
+ * @brief Read up to @p n bytes into @p buf.
+ *
+ * Returns the number of bytes read; 0 means EOF or error — inspect @p ec
+ * (ec->type == fs_error_type_none ⇒ clean EOF) to tell them apart.
+ *
+ * @param f   Handle from io_file_open().
+ * @param buf Buffer of at least @p n bytes.
+ * @param n   Capacity of @p buf in bytes.
+ * @param ec  Out: error details, or NULL.
+ * @return Bytes read (0 at EOF or on error).
+ */
 extern fs_umax_t     io_file_read(io_file_t f, char *buf, fs_umax_t n, fs_error_code_t *ec);
+
+/**
+ * @brief Write @p n bytes from @p buf.
+ *
+ * @param f   Handle from io_file_open().
+ * @param buf Bytes to write.
+ * @param n   Number of bytes to write.
+ * @param ec  Out: error details, or NULL.
+ * @return Bytes written (less than @p n on a short/error write).
+ */
 extern fs_umax_t     io_file_write(io_file_t f, const char *buf, fs_umax_t n, fs_error_code_t *ec);
+
+/**
+ * @brief Read one byte.
+ *
+ * @param f  Handle from io_file_open().
+ * @param ec Out: error details, or NULL.
+ * @return The byte in 0..255, or -1 at EOF or on error (inspect @p ec).
+ */
 extern int           io_file_getc(io_file_t f, fs_error_code_t *ec);
+
+/**
+ * @brief Read one line (up to a newline) into @p buf as a NUL-terminated char *.
+ *
+ * Bytes are not interpreted as any character set — only the line boundary
+ * matters. @p buf always receives a NUL terminator.
+ *
+ * @param f  Handle from io_file_open().
+ * @param buf Destination buffer.
+ * @param n  Capacity of @p buf in bytes (must be > 0).
+ * @param ec Out: error details, or NULL.
+ * @return @p buf, or NULL at EOF (or on error; inspect @p ec).
+ */
 extern char         *io_file_gets(io_file_t f, char *buf, fs_umax_t n, fs_error_code_t *ec);
+
+/**
+ * @brief Close and free a streaming handle.
+ *
+ * @param f Handle from io_file_open(); NULL is a no-op.
+ */
 extern void          io_file_close(io_file_t f);
 
 #ifdef __cplusplus

@@ -54,7 +54,7 @@
 
           devShells.default = pkgs.mkShell {
             inputsFrom = [ config.treefmt.build.devShell ];
-            packages = [ pkgs.cmake ];
+            packages = [ pkgs.cmake pkgs.clang-tools pkgs.doxygen ];
           };
         };
     };

@@ -111,12 +111,25 @@ typedef enum fs_posix_errors {
 #include <stdint.h>
 #define FS_UINTMAX_MAX UINTMAX_MAX
 #define FS_SIZE_MAX    INT64_MAX
+/** @brief Unsigned integer wide enough for file sizes/offsets (uintmax_t). */
 typedef uintmax_t      fs_umax_t;
+/** @brief Unsigned 32-bit integer (uint32_t). */
 typedef uint32_t       fs_uint_t;
 
+/**
+ * @brief Owned vs. borrowed native path (std::filesystem::path).
+ *
+ * fs_char_t is wchar_t on Windows and char on POSIX, so a native path is wide
+ * on Windows and narrow elsewhere. fs_path_t is the malloc'd, owned result
+ * (free it); fs_cpath_t is a non-owning view (path_view) — do not free it.
+ */
 typedef fs_char_t       *fs_path_t;
 typedef const fs_char_t *fs_cpath_t;
 
+/**
+ * @brief File type (std::filesystem::file_type), plus fs_file_type_junction
+ *        for NT junctions.
+ */
 typedef enum fs_file_type {
         fs_file_type_none,
         fs_file_type_not_found,
@@ -227,6 +240,10 @@ typedef struct fs_file_time_type {
 
 } fs_file_time_type_t;
         
+/**
+ * @brief Filesystem space info (std::filesystem::space_info): capacity, free,
+ *        and available bytes. Returned by fs_space().
+ */
 typedef struct fs_space_info {
         fs_umax_t capacity;
         fs_umax_t free;
@@ -234,12 +251,23 @@ typedef struct fs_space_info {
 
 } fs_space_info_t;
 
+/**
+ * @brief File status (std::filesystem::file_status): a file_type + perms pair.
+ *        Returned by fs_status() (follows symlinks) and fs_symlink_status().
+ */
 typedef struct fs_file_status_t {
         fs_file_type_t type;
         fs_perms_t     perms;
 
 } fs_file_status_t;
 
+/**
+ * @brief Error descriptor (std::error_code / std::filesystem::filesystem_error).
+ *
+ * type selects the domain (fs_error_type_none / _cfs / _system); code is the
+ * domain-specific code; msg is a static diagnostic string (do not free). Zeroed
+ * by `= {0}`; pass a pointer as the trailing ec out-param, or NULL to ignore.
+ */
 typedef struct fs_error_code {
         fs_error_type_t type;
         int             code;
@@ -247,6 +275,10 @@ typedef struct fs_error_code {
 
 } fs_error_code_t;
 
+/**
+ * @brief Path-component iterator state (std::filesystem::path::iterator).
+ *        Begin with fs_path_begin(); advance with fs_path_iter_next().
+ */
 typedef struct fs_path_iter {
         fs_cpath_t pos;
         fs_path_t  elem;
@@ -254,21 +286,66 @@ typedef struct fs_path_iter {
 
 } fs_path_iter_t;
 
+/**
+ * @brief Directory iterator state (std::filesystem::directory_iterator).
+ *
+ * elems is a NULL-terminated array of borrowed fs_cpath_t entry paths — index
+ * it directly (the NULL terminator is the stop condition). Owned by the
+ * iterator; free each entry then the array, or use FS_DESTROY_DIR_ITER.
+ */
 typedef struct fs_dir_iter {
         ptrdiff_t  pos;
         fs_cpath_t *elems;
 
 } fs_dir_iter_t;
 
+/** @brief Alias of fs_dir_iter_t; same shape, only construction differs (recursive). */
 typedef fs_dir_iter_t fs_recursive_dir_iter_t;
 
+/**
+ * @brief Construct an owned native path from a narrow char * (path(const char*)).
+ *
+ * Locale-dependent (mbstowcs on Windows). For a lossless, locale-independent
+ * UTF-8 path, use fs_make_path_u8(). free() the result.
+ *
+ * @param p Narrow C string (argv, a buffer, ...); must not be NULL.
+ * @return An owned fs_path_t, or NULL on allocation failure.
+ */
 extern fs_path_t fs_make_path(const char *p);
 
+/**
+ * @brief Convert a native path back to a narrow char * (path::string()).
+ *
+ * Locale-dependent (wcstombs on Windows); lossy under a non-UTF-8 locale. For
+ * a lossless UTF-8 form, use fs_path_u8(). free() the result.
+ *
+ * @param p Native path (fs_char_t *).
+ * @return A narrow, malloc'd, NUL-terminated string, or NULL on failure.
+ */
 extern char *fs_path_get(fs_cpath_t p);
 
-extern fs_path_t fs_make_path_u8(const char *p);  /* UTF-8 in:  locale-independent, lossless */
+/**
+ * @brief Construct an owned native path from a UTF-8 char * (u8path()).
+ *
+ * Locale-independent and lossless (MultiByteToWideChar(CP_UTF8) on Windows; a
+ * copy on POSIX, where native bytes are already UTF-8). free() the result.
+ *
+ * @param p UTF-8 C string; must not be NULL.
+ * @return An owned fs_path_t, or NULL on allocation failure.
+ */
+extern fs_path_t fs_make_path_u8(const char *p);
 
-extern char *fs_path_u8(fs_cpath_t p);            /* UTF-8 out: locale-independent, lossless */
+/**
+ * @brief Convert a native path to a UTF-8 char * (path::u8string()).
+ *
+ * Locale-independent and lossless (WideCharToMultiByte(CP_UTF8) on Windows; a
+ * copy on POSIX). Pairs with fs_make_path_u8() for a lossless round trip.
+ * free() the result.
+ *
+ * @param p Native path (fs_char_t *).
+ * @return A UTF-8, malloc'd, NUL-terminated string, or NULL on failure.
+ */
+extern char *fs_path_u8(fs_cpath_t p);
 
 extern fs_path_t fs_absolute(fs_cpath_t p, fs_error_code_t *ec);
 
