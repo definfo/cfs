@@ -1,9 +1,6 @@
-> ⚠️ Warning<br>
-> The library is currently being tested.
-
 # CFS: cross-platform filesystem API in C11
 
-A single header implementation of `std::filesystem`/`Boost.Filesystem` in `C11`.
+A single-header C11 implementation of `std::filesystem`/`Boost.Filesystem`, with a separate [`cio.h`](include/cfs/cio.h) byte-level file-I/O extension.
 
 ## Usage
 
@@ -27,34 +24,23 @@ Use the declarations in every translation unit that calls CFS:
 Emit the implementation in **exactly one** translation unit:
 
 ```c
-/* cfs_impl.c -- the only file that defines CFS_IMPLEMENTATION. */
+/* cfs.c -- the only file that defines CFS_IMPLEMENTATION. */
 #define CFS_IMPLEMENTATION
 #include <cfs/cfs.h>
-```
-
-or include the convenience implementation header in that one file:
-
-```c
-/* cfs_impl.c -- the only file that includes cfs_impl.h. */
-#include <cfs/cfs_impl.h>
 ```
 
 Compile that implementation object with the rest of your program:
 
 ```sh
-cc -std=c11 -I/path/to/cfs/include -c cfs_impl.c
+cc -std=c11 -I/path/to/cfs/include -c cfs.c
 cc -std=c11 -I/path/to/cfs/include -c main.c
-cc main.o cfs_impl.o -o program
+cc main.o cfs.o -o program
 ```
 
 ### Installation
 
-CFS does not require a library archive, linker flag, package-config file, or
-generated source. Copy or vendor the `include/cfs` directory somewhere on your
+Copy or vendor the `include/cfs` directory somewhere on your
 compiler include path, then include `<cfs/cfs.h>`.
-
-For a local checkout, the include path is this repository's `include`
-directory:
 
 ```sh
 cc -std=c11 -I/path/to/cfs/include ...
@@ -65,11 +51,10 @@ implementation source file to the final program or library:
 
 ```cmake
 target_include_directories(my_program PRIVATE /path/to/cfs/include)
-target_sources(my_program PRIVATE cfs_impl.c)
+target_sources(my_program PRIVATE cfs.c)
 ```
 
-where `cfs_impl.c` contains either the `CFS_IMPLEMENTATION` form or the
-`<cfs/cfs_impl.h>` form shown in the synopsis.
+where `cfs.c` contains `#define CFS_IMPLEMENTATION` as shown in the synopsis.
 
 ### Include discipline
 
@@ -79,7 +64,7 @@ implementation is guarded separately by `CFS_IMPLEMENTATION_ONCE`.
 
 - Include `<cfs/cfs.h>` normally in headers and source files that need the API.
 - Define `CFS_IMPLEMENTATION` before including `<cfs/cfs.h>` in exactly one
-  `.c` file, or include `<cfs/cfs_impl.h>` in exactly one `.c` file.
+  `.c` file.
 - Do not define `CFS_IMPLEMENTATION` in more than one translation unit; doing
   so emits duplicate external symbols at link time.
 - Do not define `CFS_IMPLEMENTATION` in a public header; every source file that
@@ -106,7 +91,7 @@ the translation unit that emits the implementation.
 CFS follows the C++17 [`std::filesystem`](https://en.cppreference.com/w/cpp/filesystem.html)
 lexical path model and filesystem operation names where practical, expressed as
 C11 functions and plain data types. The corresponding standard clauses are
-[`[fs.path]`](https://eel.is/c++draft/fs.path) for paths and
+[`[fs.class.path]`](https://eel.is/c++draft/fs.class.path) for paths and
 [`[fs.op.funcs]`](https://eel.is/c++draft/fs.op.funcs) for filesystem
 operations.
 
@@ -132,20 +117,33 @@ mapping.
 
 ### Path names and ownership
 
-`fs_char_t` is `wchar_t` on Windows and `char` on POSIX. Use `FS_MAKE_PATH`
-for portable path literals:
+`fs_char_t` is `wchar_t` on Windows and `char` on POSIX, so a native path is
+wide on Windows and narrow elsewhere. CFS has two ways to obtain one from a
+`char` spelling, differing in ownership:
+
+|            | `FS_PATH("…")`         | `fs_make_path(p)`                      |
+| :--------- | :-------------------------- | :------------------------------------- |
+| Kind       | macro — a path literal      | function — an owned path               |
+| Input      | compile-time string literal | runtime `char *` (`argv`, a buffer, …) |
+| Result     | `fs_cpath_t` (borrowed)     | `fs_path_t` (owned)                    |
+| Storage    | static (string literal)     | heap (`malloc`/`calloc`)               |
+| On Windows | auto-wide (`L"…"`)          | `mbstowcs` narrow→wide (locale)        |
+| `free`?    | never                       | caller                                 |
 
 ```c
-fs_cpath_t config = FS_MAKE_PATH("config/settings.ini");
+fs_cpath_t lit = FS_PATH("config/settings.ini"); /* literal; do not free */
+
+fs_path_t runtime = fs_make_path(argv[1]);            /* owned; free when done */
 ```
 
-Use `fs_make_path` to convert a runtime `char *` to a native path, and
-`fs_path_get` to convert a native path back to `char *`. Both return allocated
-memory.
+`fs_path_get` is the reverse — it converts a native path back to a narrow
+`char *`, heap-allocated (`free` it). Its locale-independent, lossless
+counterpart is `fs_path_u8` (always UTF-8); pair it with `fs_make_path_u8`
+(UTF-8 in) for a lossless round trip regardless of the C locale.
 
 Every function returning `fs_path_t` returns an owned path unless documented
-otherwise. Release owned paths with `free`. Do not free `FS_MAKE_PATH` literals
-or borrowed `fs_cpath_t` values.
+otherwise; release owned paths with `free`. Do not free `FS_PATH`
+literals or borrowed `fs_cpath_t` values.
 
 Iterator entries are borrowed paths owned by the iterator. When done, free
 each `it.elems[i]` and then `it.elems` itself (see the directory example
@@ -162,14 +160,16 @@ all separators explicitly.
 ### Diagnostics
 
 CFS has no throwing overloads. Operations that can fail take a trailing
-`fs_error_code_t *ec` argument. Pass `NULL` to ignore detailed diagnostics.
-When `ec` is supplied, test `ec.type` after the call:
+`fs_error_code_t *ec` argument. Pass `NULL` when you do not need failure
+details and will instead rely on the return value (see [Error handling](#error-handling)); pass `&ec`
+whenever you branch on or report a failure. When `ec` is supplied, test
+`ec.type` after the call:
 
 ```c
 fs_error_code_t ec;
 fs_umax_t size;
 
-size = fs_file_size(FS_MAKE_PATH("data.bin"), &ec);
+size = fs_file_size(FS_PATH("data.bin"), &ec);
 if (ec.type != fs_error_type_none) {
         fprintf(stderr, "file_size failed (%d): %s\n", ec.code, ec.msg);
         return 1;
@@ -189,47 +189,11 @@ returns `FS_FALSE` without making nonexistence itself an error.
 
 Build and print a path:
 
-```c
-#include <stdlib.h>
-#include <stdio.h>
-#include <cfs/cfs.h>
-
-int main(void)
-{
-        fs_error_code_t ec;
-        fs_path_t path;
-        char *display;
-
-        path = fs_path_append(FS_MAKE_PATH("output"),
-                              FS_MAKE_PATH("report.txt"),
-                              &ec);
-        if (ec.type != fs_error_type_none) {
-                fprintf(stderr, "path error: %s\n", ec.msg);
-                return 1;
-        }
-
-        display = fs_path_get(path);
-        printf("%s\n", display);
-
-        free(display);
-        free(path);
-        return 0;
-}
-```
+See [`examples/build_and_print_path.c`](examples/build_and_print_path.c).
 
 Copy a tree recursively, replacing existing files:
 
-```c
-fs_error_code_t ec;
-fs_copy_options_t options;
-
-options = fs_copy_options_recursive | fs_copy_options_overwrite_existing;
-fs_copy_opt(FS_MAKE_PATH("assets"), FS_MAKE_PATH("backup/assets"), options, &ec);
-if (ec.type != fs_error_type_none) {
-        fprintf(stderr, "copy failed: %s\n", ec.msg);
-        return 1;
-}
-```
+See [`examples/copy_tree.c`](examples/copy_tree.c).
 
 With no options, copying a directory copies its immediate entries but does not
 descend into nested directories. Add `fs_copy_options_recursive` to copy the
@@ -237,30 +201,7 @@ complete tree, matching `std::filesystem::copy`.
 
 List directory entries:
 
-```c
-fs_error_code_t ec;
-fs_dir_iter_t it;
-ptrdiff_t i;
-
-it = fs_directory_iterator(FS_MAKE_PATH("."), &ec);
-if (ec.type != fs_error_type_none) {
-        fprintf(stderr, "directory_iterator failed: %s\n", ec.msg);
-        return 1;
-}
-
-/* `it.elems` is a NULL-terminated array of borrowed entry paths; the NULL
- * terminator is the loop's stop condition, so plain indexing is enough. */
-for (i = 0; it.elems[i]; i++) {
-        char *display = fs_path_get(it.elems[i]);
-        printf("%s\n", display);
-        free(display);
-}
-
-/* entries are owned by the iterator: free each, then the array itself. */
-for (i = 0; it.elems[i]; i++)
-        free((void *)it.elems[i]);
-free((void *)it.elems);
-```
+See [`examples/list_directory_entries.c`](examples/list_directory_entries.c).
 
 Unlike C++ `std::filesystem::directory_iterator`, which lazily streams one
 entry per `++it` and yields `directory_entry` objects, CFS materializes the
@@ -268,23 +209,131 @@ whole directory up front into a `NULL`-terminated `it.elems` array of
 borrowed `fs_cpath_t` entry paths. Iterate it by direct index — the `NULL`
 terminator is the stop condition — and free each `it.elems[i]` and finally
 `it.elems` (the `FS_DESTROY_DIR_ITER(name, it)` macro performs the same
-teardown). For a recursive walk, use `fs_recursive_directory_iterator` (same
-`fs_dir_iter_t` shape, same indexing), or the `FOR_EACH_ENTRY_IN_RDIR` /
-`FS_DESTROY_RDIR_ITER` macros. `fs_directory_options_follow_directory_symlink`
+teardown). For a recursive walk, `fs_recursive_directory_iterator(p, &ec)`
+constructs the iterator (same `fs_dir_iter_t` shape, same indexing); then walk
+by direct index, or with `FOR_EACH_ENTRY_IN_RDIR(name, it)` and
+`FS_DESTROY_RDIR_ITER(name, it)` for teardown. `fs_directory_options_follow_directory_symlink`
 and `fs_directory_options_skip_permission_denied` correspond to the similarly
 named `std::filesystem::directory_options` values.
+
+Convert a user-supplied `char *` path and canonicalize it:
+
+See [`examples/canonicalize_path.c`](examples/canonicalize_path.c).
+
+This is the round trip a program takes with a path read from `argv` or a
+buffer. `fs_make_path` accepts a runtime `char *` and widens it on Windows, so it
+replaces the `realpath` / `_fullpath` shim a portable program otherwise repeats
+in every translation unit. `fs_canonical` borrows its argument and returns a new
+owned path, so free the pre-canonical copy separately. Prefer `fs_absolute` when
+symlinks should not be resolved, and `fs_weakly_canonical` for a lenient form
+that leaves a missing tail intact. Join components with `fs_path_append` /
+`fs_path_append_s` (in place) and normalize separators with
+`fs_path_make_preferred`, instead of hand-inserting separators.
+
+Judge a file's type, then read its bytes:
+
+`cfs.h` mirrors `std::filesystem`, which — by design — does not read or write
+file contents; that is left to `<fstream>`/`<cstdio>`. The separate extension
+header [`cio.h`](include/cfs/cio.h) (beyond `std::filesystem`) provides
+the byte-level layer: `io_read_file` (whole-file), `io_file_open` /
+`io_file_read` / `io_file_write` / `io_file_close` (streaming), and
+`io_file_gets` (line). File contents are bytes (`char`), independent of the
+path encoding (`fs_char_t`).
+
+- **Whole-file.** See [`examples/read_file_size_based.c`](examples/read_file_size_based.c).
+  `io_read_file` opens, sizes, and reads the file into one `malloc`'d,
+  NUL-terminated buffer (the size-based read used throughout `sac_c_parser`'s
+  `mio_read_file`, `ToString`, `Paras`). It fails cleanly on a non-openable
+  path (e.g. a directory → `EISDIR`).
+- **Stream (non-seekable or unbounded).** See [`examples/read_file_stream.c`](examples/read_file_stream.c).
+  `io_file_read` in fixed chunks, looping until EOF — for pipes, fifos,
+  sockets, and any source with no size to preallocate.
+- **Raw lines.** See [`examples/read_file_raw_lines.c`](examples/read_file_raw_lines.c).
+  `io_file_gets` reads up to a newline as a NUL-terminated `char *` without
+  interpreting bytes as a charset — safe for text where only line boundaries
+  matter.
+
+Byte-level character-encoding decode (e.g. UTF-8 via `mbrtowc`, wide `fgetwc`)
+is out of even `cio`'s scope — keep the byte stream from `cio` and decode
+in the caller. (`fs_char_t` is the _path_ encoding, not a file-content
+encoding.)
+
+`cfs.h`'s role around a read is the same object-level prelude — type, size,
+existence, and a symlink's target via `fs_read_symlink` — plus
+`fs_exists(candidate, &ec)` to probe a search path.
+
+Walk a directory tree recursively:
+
+See [`examples/walk_directory_tree.c`](examples/walk_directory_tree.c).
+
+The recursive iterator has the same `fs_dir_iter_t` shape and direct-indexing
+loop as the flat one; `FOR_EACH_ENTRY_IN_RDIR` and `FS_DESTROY_RDIR_ITER` are the
+recursive forms of `FOR_EACH_ENTRY_IN_DIR` and `FS_DESTROY_DIR_ITER`, and both
+take the loop's entry variable as their first argument.
+`fs_directory_options_follow_directory_symlink` recurses through symlinked
+directories (the analogue of the same `std::filesystem::directory_options`
+value). Unlike C++ `recursive_directory_iterator`, CFS materializes the whole
+tree eagerly rather than streaming with a live stack lazily.
+
+Write an output file, backing up or overwriting an existing one:
+
+See [`examples/write_output_file.c`](examples/write_output_file.c).
+
+CFS handles the object-level decisions around a write — ensure the parent with
+`fs_create_directories`, snapshot a collision with `fs_copy_file_opt` (pass
+`fs_copy_options_overwrite_existing` or `fs_copy_options_skip_existing` to
+control the outcome), and remove for an overwrite — then `io_write_file` /
+`io_append_file` (cio) write the bytes.
+
+Tell whether two paths name the same filesystem object:
+
+See [`examples/same_filesystem_object.c`](examples/same_filesystem_object.c).
+
+`fs_equivalent` replaces the `realpath(p, NULL)` + `strcmp` idiom: two paths are
+equivalent when they resolve to the same filesystem object (same inode and
+device, matching `std::filesystem::equivalent`). `fs_status` follows a symlink
+(reports the target's status); `fs_symlink_status` does not (reports the link
+itself).
+
+Content comparison is out of scope for `cfs.h`: `fs_equivalent` reports whether
+two paths name the _same filesystem object_, not whether their bytes are
+equal. `cfs.h` exposes no `fs_*` that reads file contents — `fs_read_symlink`
+reads a symlink target, not file bytes. For byte equality, short-circuit on
+unequal `fs_file_size`, then compare contents incrementally with
+`io_file_open` / `io_file_read` and `memcmp` — see
+`compare_then_write.c` and `write_tmpfile_compare_then_write.c`.
+
+Stream a file to a file:
+
+See [`examples/write_file_stream.c`](examples/write_file_stream.c).
+The write counterpart of `read_file_stream.c`: `io_file_open` / `read` /
+`write` (cio) stream the bytes in chunks; `cfs.h` builds the path.
+
+Compare, then write (skip if unchanged):
+
+See [`examples/compare_then_write.c`](examples/compare_then_write.c).
+Compare an in-memory string buffer against the target file: read the target
+as a binary `io_file_read` stream (cio), compare each chunk against the
+buffer, and overwrite only if they differ (or the target is missing). In text
+mode, use `io_file_gets` to compare line by line instead.
+
+Write to a temp file, compare, then commit (atomic update):
+
+See [`examples/write_tmpfile_compare_then_write.c`](examples/write_tmpfile_compare_then_write.c).
+Write an in-memory string buffer to a temp file beside the target first,
+stream-compare temp and target with `io_file_read`, then `fs_rename` the temp
+over the target — readers see either the old or the new file, never a partial
+one. In text mode, use `io_file_gets` to compare line by line instead.
 
 ### Testing this checkout
 
 To run the bundled CTest suite from a checkout:
 
 ```sh
-cmake -S tests -B tests/.build/readme -DCMAKE_C_STANDARD=11
-cmake --build tests/.build/readme
-ctest --test-dir tests/.build/readme
+cmake -S tests -B tests/.build
+cmake --build tests/.build
+ctest --test-dir tests/.build
 ```
-
-If you use Nix, enter the development shell first with `nix develop`.
 
 ## OS requirements
 
@@ -308,7 +357,7 @@ or a **custom** one.
 - Empty paths `""` are **not** transformed in `"."`. `NULL` path arguments are
   treated as **fs_cfs_error_invalid_argument** while argument validation is
   enabled, including in release builds by default.
-- `fs_file_time_type` is based on the **UNIX** epoch on **all** OSs.
+- `fs_file_time_type` is based on the UNIX epoch on **all** OSs.
 - `fs_hard_link_count` never includes the file itself as a link, for
   consistency across operating systems.
 
@@ -316,11 +365,11 @@ or a **custom** one.
 
 A function-by-function mapping of the C11 API declared in `cfs.h` to
 [`std::filesystem`](https://en.cppreference.com/w/cpp/filesystem.html)
-(C++17, `[fs.path]` and `[fs.op.funcs]`). Conventions:
+(C++17, `[fs.class.path]` and `[fs.op.funcs]`). Conventions:
 
-- Every operation takes a trailing `fs_error_code_t *ec` (pass `NULL` to
-  ignore); C++'s throwing and `std::error_code` overloads collapse into this
-  single `ec` form.
+- Every operation takes a trailing `fs_error_code_t *ec`; C++'s throwing and
+  `std::error_code` overloads collapse into this single form (see
+  [Error handling](#error-handling)).
 - The `_s` suffix marks the `fs_file_status_t`-based overload, mirroring C++'s
   `is_*(file_status)` and `exists(file_status)` forms. (`fs_status_known(s)` is
   the status-only form and has no `_s` sibling.)
@@ -350,12 +399,71 @@ A function-by-function mapping of the C11 API declared in `cfs.h` to
 | `error_code`                | `fs_error_code_t`                            | `type` / `code` / `msg`; replaces C++ error channel |
 | —                           | `fs_error_type_t`, `fs_cfs_error_t`          | portable CFS error domain                           |
 
+### Error handling
+
+`std::filesystem` exposes **two** error paradigms per operation, and the
+caller picks one at each call site: a throwing overload (`f(p)`) and a
+`std::error_code` overload (`f(p, ec)`); uncaught failures throw
+`std::filesystem::filesystem_error`. C (no overloading, no exceptions)
+collapses both into a **single** function with an **optional** trailing
+`fs_error_code_t *ec`:
+
+| `std::filesystem`                       | CFS                                                                      |
+| :-------------------------------------- | :----------------------------------------------------------------------- |
+| throwing overload (`f(p)`)              | same function, `&ec`; check `ec.type`, then abort or propagate           |
+| `std::error_code` overload (`f(p, ec)`) | same function, `&ec`                                                     |
+| `filesystem_error` exception            | `fs_error_code_t` (`type`/`code`/`msg`); caller decides whether to abort |
+| (no way to ignore)                      | `NULL` — discard details, rely on the return                             |
+
+`ec.type` selects the domain (`fs_error_type_none` / `_cfs` / `_system`;
+see [Diagnostics](#diagnostics)). Passing `NULL` is crash-safe but does
+**not** mean the call cannot fail — it discards the failure details, so you
+must rely on the return value. It is correct only when that return is an
+unambiguous, checked sentinel:
+
+- `fs_exists` / `fs_is_*` / `fs_status` → `FS_FALSE` / `fs_file_type_not_found`
+- `fs_file_size` → `(fs_umax_t)-1`
+- `fs_remove` / `fs_create_directory` → `FS_FALSE`
+- `fs_path_append` / `fs_canonical` / `fs_path_dupe` → `NULL`
+
+Do **not** pass `NULL` and ignore the return — the failure is then silent.
+Prefer `&ec` whenever you branch on, log, or propagate a failure.
+
+> Caveat: `fs_absolute` (and a few path-returners) yield a non-`NULL` empty
+> path on some errors, so `NULL` plus `if (p)` does not detect them — pass
+> `&ec` (or check the result is non-empty) for those.
+
+C++ (two overloads) vs CFS (one function):
+
+```cpp
+// C++ — the caller picks the paradigm per call site
+namespace fs = std::filesystem;
+fs::file_size(p);        // throws filesystem_error
+std::error_code e;
+fs::file_size(p, e);     // no throw; e set on failure
+```
+
+```c
+/* CFS — one function; pass &ec for details, or NULL and check the return */
+fs_error_code_t ec = {0};
+fs_umax_t sz = fs_file_size(p, &ec);
+if (ec.type != fs_error_type_none) {
+        /* report ec.code / ec.msg, then abort or propagate — like a throw */
+        return 1;
+}
+/* best-effort: discard details, check the sentinel */
+if (fs_file_size(p, NULL) == (fs_umax_t)-1)
+        return 1;
+```
+
 ### Path construction & conversion
 
 | `std::filesystem`               | CFS               | Notes                                                         |
 | :------------------------------ | :---------------- | :------------------------------------------------------------ |
-| `path(const char*)` constructor | `fs_make_path(p)` | locale-dependent narrow→native (`mbstowcs` on Windows)        |
-| `path::string()`                | `fs_path_get(p)`  | native→narrow `char*` (`wcstombs` on Windows); caller `free`s |
+| `path(const char*)` constructor | `fs_make_path(p)`   | locale-dependent narrow→native (`mbstowcs` on Windows)        |
+| `path(std::u8string)` / `u8path()` | `fs_make_path_u8(p)` | UTF-8→native, locale-independent, lossless (`MultiByteToWideChar(CP_UTF8)` on Windows) |
+| `path::string()`                | `fs_path_get(p)`    | native→narrow `char*`, locale-dependent (`wcstombs` on Windows); caller `free`s |
+| `path::u8string()`              | `fs_path_u8(p)`     | native→UTF-8 `char*`, locale-independent, lossless (`WideCharToMultiByte(CP_UTF8)` on Windows); caller `free`s |
 
 ### Path operations
 
@@ -484,12 +592,43 @@ path overloads match C++'s `path, ec` forms.
 | range-for over entries                         | `FOR_EACH_ENTRY_IN_DIR(name, it)` / `FOR_EACH_ENTRY_IN_RDIR` |
 | (iterator cleanup / RAII dtor)                 | `FS_DESTROY_DIR_ITER(name, it)` / `FS_DESTROY_RDIR_ITER`     |
 
+NOTE: `fs_recursive_directory_iterator` (and `_opt`) construct the iterator —
+they materialize the whole tree into the same `NULL`-terminated `it.elems`
+array as `fs_directory_iterator`, so `fs_recursive_dir_iter_t` is a typedef
+of `fs_dir_iter_t`. `FOR_EACH_ENTRY_IN_RDIR`, `FS_DESTROY_RDIR_ITER`, and
+`fs_recursive_dir_iter_next` are **aliases** of the non-recursive
+`FOR_EACH_ENTRY_IN_DIR` / `FS_DESTROY_DIR_ITER` / `fs_dir_iter_next`; walk
+and teardown are identical, only construction differs. Construct with the
+function, then walk by direct index or the macro — unlike C++
+`recursive_directory_iterator`, CFS does not stream with a live stack.
+
 ### Convenience macros
 
 | `std::filesystem`     | CFS                    |
 | :-------------------- | :--------------------- |
 | `true` / `false`      | `FS_TRUE` / `FS_FALSE` |
-| portable path literal | `FS_MAKE_PATH(p)`      |
+| portable path literal | `FS_PATH(p)`      |
+
+### File I/O (`cio.h`, beyond `std::filesystem`)
+
+`cfs.h` mirrors `std::filesystem`, which does not read or write file
+contents. The separate header `cio.h` provides that byte-level layer so a
+program can do all its file/path I/O through CFS. It is a single-header
+extension with its own `CIO_IMPLEMENTATION` guard (define it in exactly one
+TU); its bodies call `fs_path_get`, so either define `CFS_IMPLEMENTATION` in
+the same TU or link a TU that does. File contents are bytes (`char`),
+independent of the path encoding (`fs_char_t`).
+
+| CFS (`cio.h`)                       | Purpose                                                   |
+| :------------------------------------- | :-------------------------------------------------------- |
+| `io_read_file(p, &len, ec)`         | whole-file read -> malloc'd, NUL-terminated buffer        |
+| `io_write_file(p, buf, len, ec)`    | whole-file write (create/truncate)                        |
+| `io_append_file(p, buf, len, ec)`   | whole-file append                                         |
+| `io_file_open(p, mode, ec)`         | open a streaming handle (`io_file_t`)                  |
+| `io_file_read` / `io_file_write` | chunked read/write via a handle                           |
+| `io_file_getc` / `io_file_gets`  | byte / line read via a handle                             |
+| `io_file_close`                     | close + free a handle                                     |
+| `io_file_mode_t`                    | `io_file_mode_read` / `_write` / `_append` (+ `_text`) |
 
 ### Not modeled
 
@@ -502,8 +641,12 @@ intentionally omitted; the differences are summarized above.
 - `filesystem_error` — failures surface through `fs_error_code_t`.
 - `path::native()` / `path::c_str()` — the `fs_path_t` / `fs_cpath_t` value _is_
   the native `fs_char_t` string; no conversion function is needed.
-- `path::u8string()` / `path::wstring()` — use `fs_path_get` for the narrow
-  `char*` form; the native `fs_char_t` value is available directly.
+- `path::wstring()` — on Windows the `fs_path_t` / `fs_cpath_t` value is already
+  `wchar_t*` (= `native()`); on POSIX there is no narrow→wide converter (use the
+  native `char*` value, or `fs_path_get` / `fs_path_u8`). `path::native()` /
+  `path::c_str()` are the path value itself; `path::string()` → `fs_path_get`
+  (locale-dependent); `path::u8string()` → `fs_path_u8` (locale-independent,
+  lossless).
 - Throwing overloads of `current_path`, `last_write_time`, `permissions`,
   `status`, `symlink_status`, `file_size`, etc. — only the `ec` forms are
   provided.

@@ -77,8 +77,8 @@ TEST(boost_long_path, no_escape)
         fs_path_t        root, comp1, comp2, path, canon;
         fs_file_status_t st;
 
-        root  = fs_path_append(FS_MAKE_PATH("cfs-boost-longpath"),
-                               FS_MAKE_PATH("no-escape"), &ec);
+        root  = fs_path_append(FS_PATH("cfs-boost-longpath"),
+                               FS_PATH("no-escape"), &ec);
         comp1 = make_long_component('x');
         comp2 = make_long_component('y');
         path  = join3(root, comp1, comp2);
@@ -110,7 +110,7 @@ TEST(boost_long_path, absolute)
 
         cwd = fs_current_path(&ec); /* anchor an absolute base */
         EXPECT_TRUE(cwd != NULL);
-        root  = fs_path_append(cwd, FS_MAKE_PATH("cfs-boost-longpath-absolute"), &ec);
+        root  = fs_path_append(cwd, FS_PATH("cfs-boost-longpath-absolute"), &ec);
         free(cwd);
         comp1 = make_long_component('x');
         comp2 = make_long_component('y');
@@ -144,16 +144,16 @@ int main(void)
         REGISTER_TEST(boost_long_path, absolute);
         result = RUN_ALL_TESTS();
 
-        rel_root = fs_path_append(FS_MAKE_PATH("cfs-boost-longpath"),
-                                  FS_MAKE_PATH("no-escape"), NULL);
+        rel_root = fs_path_append(FS_PATH("cfs-boost-longpath"),
+                                  FS_PATH("no-escape"), NULL);
         if (rel_root && fs_exists(rel_root, NULL))
                 fs_remove_all(rel_root, NULL);
         free(rel_root);
-        if (fs_exists(FS_MAKE_PATH("cfs-boost-longpath"), NULL))
-                fs_remove_all(FS_MAKE_PATH("cfs-boost-longpath"), NULL);
+        if (fs_exists(FS_PATH("cfs-boost-longpath"), NULL))
+                fs_remove_all(FS_PATH("cfs-boost-longpath"), NULL);
 
         cwd = fs_current_path(NULL);
-        abs_root = fs_path_append(cwd, FS_MAKE_PATH("cfs-boost-longpath-absolute"), NULL);
+        abs_root = fs_path_append(cwd, FS_PATH("cfs-boost-longpath-absolute"), NULL);
         free(cwd);
         if (abs_root && fs_exists(abs_root, NULL))
                 fs_remove_all(abs_root, NULL);

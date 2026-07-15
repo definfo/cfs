@@ -15,8 +15,8 @@
 #define TESTS_IMPLEMENTATION
 #include "tests.h"
 
-#define COPY_ROOT   FS_MAKE_PATH("cfs-boost-copy-root")
-#define COPY_TARGET FS_MAKE_PATH("cfs-boost-copy-target")
+#define COPY_ROOT   FS_PATH("cfs-boost-copy-root")
+#define COPY_TARGET FS_PATH("cfs-boost-copy-target")
 
 #define EXPECT_NO_EC(ec) EXPECT_EQ((ec).type, fs_error_type_none)
 
@@ -87,39 +87,39 @@ static void copy_prepare_tree(void)
 
         fs_create_directory(COPY_ROOT, &ec);
 
-        path = copy_join2(COPY_ROOT, FS_MAKE_PATH("f1"));
+        path = copy_join2(COPY_ROOT, FS_PATH("f1"));
         copy_write_file(path, "f1");
         free(path);
 
-        path = copy_join2(COPY_ROOT, FS_MAKE_PATH("f2"));
+        path = copy_join2(COPY_ROOT, FS_PATH("f2"));
         copy_write_file(path, "f2");
         free(path);
 
-        path = copy_join2(COPY_ROOT, FS_MAKE_PATH("d1"));
+        path = copy_join2(COPY_ROOT, FS_PATH("d1"));
         fs_create_directory(path, NULL);
         free(path);
 
-        path = copy_join3(COPY_ROOT, FS_MAKE_PATH("d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_ROOT, FS_PATH("d1"), FS_PATH("f1"));
         copy_write_file(path, "d1f1");
         free(path);
 
-        path = copy_join3(COPY_ROOT, FS_MAKE_PATH("d1"), FS_MAKE_PATH("d1"));
+        path = copy_join3(COPY_ROOT, FS_PATH("d1"), FS_PATH("d1"));
         fs_create_directory(path, NULL);
         free(path);
 
-        path = copy_join3(COPY_ROOT, FS_MAKE_PATH("d1/d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_ROOT, FS_PATH("d1/d1"), FS_PATH("f1"));
         copy_write_file(path, "d1d1f1");
         free(path);
 
-        path = copy_join3(COPY_ROOT, FS_MAKE_PATH("d1"), FS_MAKE_PATH("d2"));
+        path = copy_join3(COPY_ROOT, FS_PATH("d1"), FS_PATH("d2"));
         fs_create_directory(path, NULL);
         free(path);
 
-        path = copy_join2(COPY_ROOT, FS_MAKE_PATH("d2"));
+        path = copy_join2(COPY_ROOT, FS_PATH("d2"));
         fs_create_directory(path, NULL);
         free(path);
 
-        path = copy_join3(COPY_ROOT, FS_MAKE_PATH("d2"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_ROOT, FS_PATH("d2"), FS_PATH("f1"));
         copy_write_file(path, "d2f1");
         free(path);
 }
@@ -140,24 +140,24 @@ TEST(boost_copy, file_default)
         fs_create_directory(COPY_TARGET, &ec);
         EXPECT_NO_EC(ec);
 
-        src = copy_join2(COPY_ROOT, FS_MAKE_PATH("f1"));
+        src = copy_join2(COPY_ROOT, FS_PATH("f1"));
         fs_copy(src, COPY_TARGET, &ec);
         EXPECT_NO_EC(ec);
         free(src);
 
-        src = copy_join2(COPY_ROOT, FS_MAKE_PATH("f2"));
-        dst = copy_join2(COPY_TARGET, FS_MAKE_PATH("f3"));
+        src = copy_join2(COPY_ROOT, FS_PATH("f2"));
+        dst = copy_join2(COPY_TARGET, FS_PATH("f3"));
         fs_copy(src, dst, &ec);
         EXPECT_NO_EC(ec);
         free(src);
         free(dst);
 
-        dst = copy_join2(COPY_TARGET, FS_MAKE_PATH("f1"));
+        dst = copy_join2(COPY_TARGET, FS_PATH("f1"));
         EXPECT_TRUE(fs_is_regular_file(dst, NULL));
         copy_expect_file_contents(dst, "f1", __ret);
         free(dst);
 
-        dst = copy_join2(COPY_TARGET, FS_MAKE_PATH("f3"));
+        dst = copy_join2(COPY_TARGET, FS_PATH("f3"));
         EXPECT_TRUE(fs_is_regular_file(dst, NULL));
         copy_expect_file_contents(dst, "f2", __ret);
         free(dst);
@@ -172,21 +172,21 @@ TEST(boost_copy, directory_default)
         fs_copy(COPY_ROOT, COPY_TARGET, &ec);
         EXPECT_NO_EC(ec);
 
-        path = copy_join2(COPY_TARGET, FS_MAKE_PATH("f1"));
+        path = copy_join2(COPY_TARGET, FS_PATH("f1"));
         EXPECT_TRUE(fs_is_regular_file(path, NULL));
         copy_expect_file_contents(path, "f1", __ret);
         free(path);
 
-        path = copy_join2(COPY_TARGET, FS_MAKE_PATH("f2"));
+        path = copy_join2(COPY_TARGET, FS_PATH("f2"));
         EXPECT_TRUE(fs_is_regular_file(path, NULL));
         copy_expect_file_contents(path, "f2", __ret);
         free(path);
 
-        path = copy_join2(COPY_TARGET, FS_MAKE_PATH("d1"));
+        path = copy_join2(COPY_TARGET, FS_PATH("d1"));
         EXPECT_TRUE(fs_is_directory(path, NULL));
         free(path);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d1"), FS_PATH("f1"));
         EXPECT_FALSE(fs_exists(path, NULL));
         free(path);
 }
@@ -200,17 +200,17 @@ TEST(boost_copy, directory_recursive)
         fs_copy_opt(COPY_ROOT, COPY_TARGET, fs_copy_options_recursive, &ec);
         EXPECT_NO_EC(ec);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d1"), FS_PATH("f1"));
         EXPECT_TRUE(fs_is_regular_file(path, NULL));
         copy_expect_file_contents(path, "d1f1", __ret);
         free(path);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d1/d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d1/d1"), FS_PATH("f1"));
         EXPECT_TRUE(fs_is_regular_file(path, NULL));
         copy_expect_file_contents(path, "d1d1f1", __ret);
         free(path);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d2"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d2"), FS_PATH("f1"));
         EXPECT_TRUE(fs_is_regular_file(path, NULL));
         copy_expect_file_contents(path, "d2f1", __ret);
         free(path);
@@ -227,19 +227,19 @@ TEST(boost_copy, directory_recursive_directories_only)
         fs_copy_opt(COPY_ROOT, COPY_TARGET, opts, &ec);
         EXPECT_NO_EC(ec);
 
-        path = copy_join2(COPY_TARGET, FS_MAKE_PATH("d1"));
+        path = copy_join2(COPY_TARGET, FS_PATH("d1"));
         EXPECT_TRUE(fs_is_directory(path, NULL));
         free(path);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d1"), FS_MAKE_PATH("d1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d1"), FS_PATH("d1"));
         EXPECT_TRUE(fs_is_directory(path, NULL));
         free(path);
 
-        path = copy_join3(COPY_TARGET, FS_MAKE_PATH("d1"), FS_MAKE_PATH("f1"));
+        path = copy_join3(COPY_TARGET, FS_PATH("d1"), FS_PATH("f1"));
         EXPECT_FALSE(fs_exists(path, NULL));
         free(path);
 
-        path = copy_join2(COPY_TARGET, FS_MAKE_PATH("f1"));
+        path = copy_join2(COPY_TARGET, FS_PATH("f1"));
         EXPECT_FALSE(fs_exists(path, NULL));
         free(path);
 }
@@ -254,15 +254,15 @@ TEST(boost_copy, errors)
         fs_create_directory(COPY_TARGET, &ec);
         EXPECT_NO_EC(ec);
 
-        src = copy_join2(COPY_ROOT, FS_MAKE_PATH("non-existing"));
+        src = copy_join2(COPY_ROOT, FS_PATH("non-existing"));
         fs_copy(src, COPY_TARGET, &ec);
         EXPECT_EQ(ec.code, fs_cfs_error_no_such_file_or_directory);
         free(src);
 
-        dst = copy_join2(COPY_TARGET, FS_MAKE_PATH("f1"));
+        dst = copy_join2(COPY_TARGET, FS_PATH("f1"));
         copy_write_file(dst, "existing");
 
-        src = copy_join2(COPY_ROOT, FS_MAKE_PATH("f1"));
+        src = copy_join2(COPY_ROOT, FS_PATH("f1"));
         fs_copy(src, COPY_TARGET, &ec);
         EXPECT_NE(ec.type, fs_error_type_none);
         fs_copy(src, dst, &ec);

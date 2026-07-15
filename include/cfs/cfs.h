@@ -24,8 +24,8 @@ typedef wchar_t fs_char_t;
 #define FS_PREFERRED_SEPARATOR (L'\\')
 #define FS_PREFERRED_SEPARATOR_S (L"\\")
 
-#define __FS_MAKE_PATH(__str__) L##__str__
-#define FS_MAKE_PATH(__str__) __FS_MAKE_PATH(__str__)
+#define __FS_PATH(__str__) L##__str__
+#define FS_PATH(__str__) __FS_PATH(__str__)
 
 typedef enum fs_win_errors {
         fs_win_error_success                   = ERROR_SUCCESS,
@@ -58,7 +58,7 @@ typedef char fs_char_t;
 #define FS_PREFERRED_SEPARATOR '/'
 #define FS_PREFERRED_SEPARATOR_S "/"
 
-#define FS_MAKE_PATH(__str__) __str__
+#define FS_PATH(__str__) __str__
 
 typedef enum fs_posix_errors {
         fs_posix_error_success                           = 0,
@@ -265,6 +265,10 @@ typedef fs_dir_iter_t fs_recursive_dir_iter_t;
 extern fs_path_t fs_make_path(const char *p);
 
 extern char *fs_path_get(fs_cpath_t p);
+
+extern fs_path_t fs_make_path_u8(const char *p);  /* UTF-8 in:  locale-independent, lossless */
+
+extern char *fs_path_u8(fs_cpath_t p);            /* UTF-8 out: locale-independent, lossless */
 
 extern fs_path_t fs_absolute(fs_cpath_t p, fs_error_code_t *ec);
 
@@ -2496,6 +2500,44 @@ extern char *fs_path_get(const fs_cpath_t p)
         return buf;
 #else
         return _fs_strdup(p, NULL);
+#endif
+}
+
+extern fs_path_t fs_make_path_u8(const char *p)
+{
+#ifdef _WIN32
+        int        wlen;
+        fs_char_t *buf;
+
+        wlen = MultiByteToWideChar(CP_UTF8, 0, p, -1, NULL, 0);
+        if (wlen == 0)
+                return NULL;
+        buf = calloc((size_t)wlen, sizeof(fs_char_t));
+        if (buf == NULL)
+                return NULL;
+        MultiByteToWideChar(CP_UTF8, 0, p, -1, buf, wlen);
+        return buf;
+#else
+        return _fs_strdup(p, NULL);     /* POSIX native bytes are already UTF-8 */
+#endif
+}
+
+extern char *fs_path_u8(const fs_cpath_t p)
+{
+#ifdef _WIN32
+        int   len;
+        char *buf;
+
+        len = WideCharToMultiByte(CP_UTF8, 0, p, -1, NULL, 0, NULL, NULL);
+        if (len == 0)
+                return NULL;
+        buf = calloc((size_t)len, sizeof(char));
+        if (buf == NULL)
+                return NULL;
+        WideCharToMultiByte(CP_UTF8, 0, p, -1, buf, len, NULL, NULL);
+        return buf;
+#else
+        return _fs_strdup(p, NULL);     /* POSIX native bytes are already UTF-8 */
 #endif
 }
 

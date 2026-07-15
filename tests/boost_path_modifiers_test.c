@@ -48,18 +48,18 @@ do {                                                                    \
 TEST(boost_path_modifiers, append)
 {
         const append_case_t cases[] = {
-                { FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_TRUE },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_TRUE },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("bar"), FS_MAKE_PATH("bar"), FS_TRUE },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_TRUE },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_TRUE },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar"), FS_TRUE },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar"), FS_TRUE },
+                { FS_PATH(""), FS_PATH(""), FS_PATH(""), FS_TRUE },
+                { FS_PATH(""), FS_PATH("/"), FS_PATH("/"), FS_TRUE },
+                { FS_PATH(""), FS_PATH("bar"), FS_PATH("bar"), FS_TRUE },
+                { FS_PATH(""), FS_PATH("/bar"), FS_PATH("/bar"), FS_TRUE },
+                { FS_PATH("/"), FS_PATH(""), FS_PATH("/"), FS_TRUE },
+                { FS_PATH("/"), FS_PATH("/"), FS_PATH("/"), FS_TRUE },
+                { FS_PATH("/"), FS_PATH("bar"), FS_PATH("/bar"), FS_TRUE },
+                { FS_PATH("/"), FS_PATH("/bar"), FS_PATH("/bar"), FS_TRUE },
+                { FS_PATH("foo"), FS_PATH("bar"), FS_PATH("foo/bar"), FS_TRUE },
                 /* Existing separators are preserved; only inserted separators are preferred. */
-                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH(""), FS_MAKE_PATH("foo/"), FS_FALSE },
-                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar"), FS_FALSE }
+                { FS_PATH("foo/"), FS_PATH(""), FS_PATH("foo/"), FS_FALSE },
+                { FS_PATH("foo/"), FS_PATH("bar"), FS_PATH("foo/bar"), FS_FALSE }
         };
 
         fs_error_code_t ec;
@@ -91,17 +91,17 @@ TEST(boost_path_modifiers, append)
 TEST(boost_path_modifiers, concat)
 {
         const modifier_case_t cases[] = {
-                { FS_MAKE_PATH(""), FS_MAKE_PATH(""), FS_MAKE_PATH("") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/"), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("bar"), FS_MAKE_PATH("bar") },
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("/bar") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH(""), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/"), FS_MAKE_PATH("//") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("/bar") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/bar"), FS_MAKE_PATH("//bar") },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("/"), FS_MAKE_PATH("foo/") },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foobar") },
-                { FS_MAKE_PATH("foo/"), FS_MAKE_PATH("bar"), FS_MAKE_PATH("foo/bar") }
+                { FS_PATH(""), FS_PATH(""), FS_PATH("") },
+                { FS_PATH(""), FS_PATH("/"), FS_PATH("/") },
+                { FS_PATH(""), FS_PATH("bar"), FS_PATH("bar") },
+                { FS_PATH(""), FS_PATH("/bar"), FS_PATH("/bar") },
+                { FS_PATH("/"), FS_PATH(""), FS_PATH("/") },
+                { FS_PATH("/"), FS_PATH("/"), FS_PATH("//") },
+                { FS_PATH("/"), FS_PATH("bar"), FS_PATH("/bar") },
+                { FS_PATH("/"), FS_PATH("/bar"), FS_PATH("//bar") },
+                { FS_PATH("foo"), FS_PATH("/"), FS_PATH("foo/") },
+                { FS_PATH("foo"), FS_PATH("bar"), FS_PATH("foobar") },
+                { FS_PATH("foo/"), FS_PATH("bar"), FS_PATH("foo/bar") }
         };
 
         fs_error_code_t ec;
@@ -129,40 +129,40 @@ TEST(boost_path_modifiers, replace_filename_and_extension)
         fs_error_code_t ec;
         fs_path_t       path;
 
-        path = fs_path_dupe(FS_MAKE_PATH("/foo/bar.txt"), NULL);
-        fs_path_replace_filename(&path, FS_MAKE_PATH("baz.txt"), &ec);
+        path = fs_path_dupe(FS_PATH("/foo/bar.txt"), NULL);
+        fs_path_replace_filename(&path, FS_PATH("baz.txt"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("/foo/baz.txt"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("/foo/baz.txt"));
         free(path);
 
-        path = fs_path_dupe(FS_MAKE_PATH("a.txt"), NULL);
-        fs_path_replace_extension(&path, FS_MAKE_PATH(""), &ec);
+        path = fs_path_dupe(FS_PATH("a.txt"), NULL);
+        fs_path_replace_extension(&path, FS_PATH(""), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("a"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("a"));
         free(path);
 
-        path = fs_path_dupe(FS_MAKE_PATH("a.txt"), NULL);
-        fs_path_replace_extension(&path, FS_MAKE_PATH("tex"), &ec);
+        path = fs_path_dupe(FS_PATH("a.txt"), NULL);
+        fs_path_replace_extension(&path, FS_PATH("tex"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("a.tex"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("a.tex"));
         free(path);
 
-        path = fs_path_dupe(FS_MAKE_PATH("a"), NULL);
-        fs_path_replace_extension(&path, FS_MAKE_PATH(".txt"), &ec);
+        path = fs_path_dupe(FS_PATH("a"), NULL);
+        fs_path_replace_extension(&path, FS_PATH(".txt"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("a.txt"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("a.txt"));
         free(path);
 
-        path = fs_path_dupe(FS_MAKE_PATH("foo.txt"), NULL);
-        fs_path_replace_extension(&path, FS_MAKE_PATH(".tar.bz2"), &ec);
+        path = fs_path_dupe(FS_PATH("foo.txt"), NULL);
+        fs_path_replace_extension(&path, FS_PATH(".tar.bz2"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("foo.tar.bz2"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("foo.tar.bz2"));
         free(path);
 
-        path = fs_path_dupe(FS_MAKE_PATH("a.txt/b"), NULL);
-        fs_path_replace_extension(&path, FS_MAKE_PATH(".c"), &ec);
+        path = fs_path_dupe(FS_PATH("a.txt/b"), NULL);
+        fs_path_replace_extension(&path, FS_PATH(".c"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("a.txt/b.c"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("a.txt/b.c"));
         free(path);
 }
 
@@ -172,29 +172,29 @@ TEST(boost_path_modifiers, make_preferred_and_compare)
         fs_path_t       path;
         int             cmp;
 
-        path = fs_path_dupe(FS_MAKE_PATH("//abc\\def/ghi"), NULL);
+        path = fs_path_dupe(FS_PATH("//abc\\def/ghi"), NULL);
         fs_path_make_preferred(&path, &ec);
         EXPECT_NO_EC(ec);
 #ifdef _WIN32
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("\\\\abc\\def\\ghi"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("\\\\abc\\def\\ghi"));
 #else
-        EXPECT_PATH_EQ_LITERAL(path, FS_MAKE_PATH("//abc\\def/ghi"));
+        EXPECT_PATH_EQ_LITERAL(path, FS_PATH("//abc\\def/ghi"));
 #endif
         free(path);
 
-        cmp = fs_path_compare(FS_MAKE_PATH("foo"), FS_MAKE_PATH("foo"), &ec);
+        cmp = fs_path_compare(FS_PATH("foo"), FS_PATH("foo"), &ec);
         EXPECT_NO_EC(ec);
         EXPECT_EQ(cmp, 0);
 
-        cmp = fs_path_compare(FS_MAKE_PATH("foo"), FS_MAKE_PATH("zoo"), &ec);
+        cmp = fs_path_compare(FS_PATH("foo"), FS_PATH("zoo"), &ec);
         EXPECT_NO_EC(ec);
         EXPECT_TRUE(cmp < 0);
 
-        cmp = fs_path_compare(FS_MAKE_PATH("zoo"), FS_MAKE_PATH("foo"), &ec);
+        cmp = fs_path_compare(FS_PATH("zoo"), FS_PATH("foo"), &ec);
         EXPECT_NO_EC(ec);
         EXPECT_TRUE(cmp > 0);
 
-        cmp = fs_path_compare(FS_MAKE_PATH("/foo"), FS_MAKE_PATH("foo"), &ec);
+        cmp = fs_path_compare(FS_PATH("/foo"), FS_PATH("foo"), &ec);
         EXPECT_NO_EC(ec);
         EXPECT_TRUE(cmp > 0);
 }

@@ -17,7 +17,7 @@
 #define TESTS_IMPLEMENTATION
 #include "tests.h"
 
-#define OPS_ROOT FS_MAKE_PATH("cfs-boost-operations-root")
+#define OPS_ROOT FS_PATH("cfs-boost-operations-root")
 
 #define EXPECT_NO_EC(ec) EXPECT_EQ((ec).type, fs_error_type_none)
 #define EXPECT_EC_SET(ec) EXPECT_NE((ec).type, fs_error_type_none)
@@ -66,7 +66,7 @@ TEST(boost_operations, resize_file)
         fs_error_code_t ec;
         fs_path_t       file;
 
-        file = ops_join2(OPS_ROOT, FS_MAKE_PATH("resize.txt"));
+        file = ops_join2(OPS_ROOT, FS_PATH("resize.txt"));
         ops_create_file(file, "1234567890");
         EXPECT_TRUE(fs_exists(file, NULL));
         EXPECT_EQ(fs_file_size(file, NULL), (fs_umax_t)10);
@@ -81,10 +81,10 @@ TEST(boost_operations, resize_file)
 
         free(file);
 
-        fs_resize_file(ops_join2(OPS_ROOT, FS_MAKE_PATH("no-such-file")), 15, &ec);
+        fs_resize_file(ops_join2(OPS_ROOT, FS_PATH("no-such-file")), 15, &ec);
         EXPECT_EC_SET(ec);
 
-        fs_remove_all(OPS_ROOT FS_MAKE_PATH("/no-such-file"), NULL);
+        fs_remove_all(OPS_ROOT FS_PATH("/no-such-file"), NULL);
 }
 
 /*
@@ -97,7 +97,7 @@ TEST(boost_operations, status_of_nonexistent)
         fs_file_status_t s;
         fs_path_t        missing;
 
-        missing = ops_join2(OPS_ROOT, FS_MAKE_PATH("nosuch"));
+        missing = ops_join2(OPS_ROOT, FS_PATH("nosuch"));
 
         EXPECT_FALSE(fs_exists(missing, NULL));
         EXPECT_FALSE(fs_is_regular_file(missing, NULL));
@@ -123,7 +123,7 @@ TEST(boost_operations, remove)
         fs_path_t       file;
         fs_path_t       dir;
 
-        file = ops_join2(OPS_ROOT, FS_MAKE_PATH("shortlife"));
+        file = ops_join2(OPS_ROOT, FS_PATH("shortlife"));
         ops_create_file(file, "");
         EXPECT_TRUE(fs_exists(file, NULL));
         EXPECT_TRUE(fs_remove(file, &ec));
@@ -131,11 +131,11 @@ TEST(boost_operations, remove)
         EXPECT_FALSE(fs_exists(file, NULL));
         free(file);
 
-        EXPECT_FALSE(fs_remove(ops_join2(OPS_ROOT, FS_MAKE_PATH("no-such-file")), &ec));
+        EXPECT_FALSE(fs_remove(ops_join2(OPS_ROOT, FS_PATH("no-such-file")), &ec));
         EXPECT_NO_EC(ec);
-        fs_remove_all(OPS_ROOT FS_MAKE_PATH("/no-such-file"), NULL);
+        fs_remove_all(OPS_ROOT FS_PATH("/no-such-file"), NULL);
 
-        dir = ops_join2(OPS_ROOT, FS_MAKE_PATH("shortlife_dir"));
+        dir = ops_join2(OPS_ROOT, FS_PATH("shortlife_dir"));
         fs_create_directory(dir, NULL);
         EXPECT_TRUE(fs_is_directory(dir, NULL));
         EXPECT_TRUE(fs_remove(dir, &ec));
@@ -156,23 +156,23 @@ TEST(boost_operations, remove_all)
         fs_path_t       d2;
         fs_path_t       nested_file;
 
-        file = ops_join2(OPS_ROOT, FS_MAKE_PATH("shortlife"));
+        file = ops_join2(OPS_ROOT, FS_PATH("shortlife"));
         ops_create_file(file, "");
         EXPECT_EQ(fs_remove_all(file, &ec), (fs_umax_t)1);
         EXPECT_NO_EC(ec);
         EXPECT_FALSE(fs_exists(file, NULL));
         free(file);
 
-        EXPECT_EQ(fs_remove_all(ops_join2(OPS_ROOT, FS_MAKE_PATH("no-such-file")), &ec), (fs_umax_t)0);
+        EXPECT_EQ(fs_remove_all(ops_join2(OPS_ROOT, FS_PATH("no-such-file")), &ec), (fs_umax_t)0);
         EXPECT_NO_EC(ec);
-        fs_remove_all(OPS_ROOT FS_MAKE_PATH("/no-such-file"), NULL);
+        fs_remove_all(OPS_ROOT FS_PATH("/no-such-file"), NULL);
 
         /* a directory tree: dir/nested_dir, dir/file */
-        d1 = ops_join2(OPS_ROOT, FS_MAKE_PATH("shortlife_dir"));
+        d1 = ops_join2(OPS_ROOT, FS_PATH("shortlife_dir"));
         fs_create_directory(d1, NULL);
-        d2 = ops_join3(OPS_ROOT, FS_MAKE_PATH("shortlife_dir"), FS_MAKE_PATH("nested_dir"));
+        d2 = ops_join3(OPS_ROOT, FS_PATH("shortlife_dir"), FS_PATH("nested_dir"));
         fs_create_directory(d2, NULL);
-        nested_file = ops_join3(OPS_ROOT, FS_MAKE_PATH("shortlife_dir"), FS_MAKE_PATH("file"));
+        nested_file = ops_join3(OPS_ROOT, FS_PATH("shortlife_dir"), FS_PATH("file"));
         ops_create_file(nested_file, "");
 
         EXPECT_EQ(fs_remove_all(d1, &ec), (fs_umax_t)3);
@@ -197,12 +197,12 @@ TEST(boost_operations, canonical)
         fs_path_t       result;
         fs_path_t       expected;
 
-        target = ops_join2(OPS_ROOT, FS_MAKE_PATH("target"));
+        target = ops_join2(OPS_ROOT, FS_PATH("target"));
         ops_create_file(target, "");
 
         /* canonical(".") is the current path */
         cur = fs_current_path(NULL);
-        result = fs_canonical(FS_MAKE_PATH("."), &ec);
+        result = fs_canonical(FS_PATH("."), &ec);
         EXPECT_NO_EC(ec);
         EXPECT_EQ_PATH(result, cur);
         free(result);
@@ -226,11 +226,11 @@ TEST(boost_operations, canonical)
         free(expected);
 
         /* canonical of a nonexistent path is an error */
-        result = fs_canonical(ops_join2(OPS_ROOT, FS_MAKE_PATH("no-such-file")), &ec);
+        result = fs_canonical(ops_join2(OPS_ROOT, FS_PATH("no-such-file")), &ec);
         EXPECT_EQ(result, NULL);
         EXPECT_EQ(ec.code, fs_cfs_error_no_such_file_or_directory);
         free(result);
-        fs_remove_all(OPS_ROOT FS_MAKE_PATH("/no-such-file"), NULL);
+        fs_remove_all(OPS_ROOT FS_PATH("/no-such-file"), NULL);
 
         free(target);
 }

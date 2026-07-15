@@ -48,62 +48,62 @@ TEST(boost_path, query_and_decomposition_examples)
         fs_error_code_t ec;
         fs_path_t       out;
 
-        out = fs_path_parent_path(FS_MAKE_PATH("/foo/bar.txt"), &ec);
+        out = fs_path_parent_path(FS_PATH("/foo/bar.txt"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("/foo"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_PATH("/foo"));
         free(out);
 
-        out = fs_path_parent_path(FS_MAKE_PATH("/foo/bar/"), &ec);
+        out = fs_path_parent_path(FS_PATH("/foo/bar/"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("/foo/bar"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_PATH("/foo/bar"));
         free(out);
 
-        out = fs_path_parent_path(FS_MAKE_PATH("/"), &ec);
+        out = fs_path_parent_path(FS_PATH("/"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH(""));
+        EXPECT_PATH_EQ(out, FS_PATH(""));
         free(out);
 
-        out = fs_path_filename(FS_MAKE_PATH("/foo/bar.txt"), &ec);
+        out = fs_path_filename(FS_PATH("/foo/bar.txt"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("bar.txt"));
+        EXPECT_PATH_EQ(out, FS_PATH("bar.txt"));
         free(out);
 
-        out = fs_path_filename(FS_MAKE_PATH("/foo/bar/"), &ec);
+        out = fs_path_filename(FS_PATH("/foo/bar/"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH(""));
+        EXPECT_PATH_EQ(out, FS_PATH(""));
         free(out);
 
-        out = fs_path_stem(FS_MAKE_PATH("a.b.c."), &ec);
+        out = fs_path_stem(FS_PATH("a.b.c."), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("a.b.c"));
+        EXPECT_PATH_EQ(out, FS_PATH("a.b.c"));
         free(out);
 
-        out = fs_path_extension(FS_MAKE_PATH("a.b.c."), &ec);
+        out = fs_path_extension(FS_PATH("a.b.c."), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ(out, FS_MAKE_PATH("."));
+        EXPECT_PATH_EQ(out, FS_PATH("."));
         free(out);
 }
 
 TEST(boost_path, lexically_normal)
 {
         const path_case_t cases[] = {
-                { FS_MAKE_PATH(""), FS_MAKE_PATH("") },
-                { FS_MAKE_PATH("/"), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH("///"), FS_MAKE_PATH("/") },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("foo") },
-                { FS_MAKE_PATH("/./foo"), FS_MAKE_PATH("/foo") },
-                { FS_MAKE_PATH("foo/bar"), FS_MAKE_PATH("foo/bar") },
-                { FS_MAKE_PATH(".."), FS_MAKE_PATH("..") },
-                { FS_MAKE_PATH("../.."), FS_MAKE_PATH("../..") },
-                { FS_MAKE_PATH("../foo"), FS_MAKE_PATH("../foo") },
-                { FS_MAKE_PATH("foo/.."), FS_MAKE_PATH(".") },
-                { FS_MAKE_PATH("foo/../bar"), FS_MAKE_PATH("bar") },
-                { FS_MAKE_PATH("foo/bar/.."), FS_MAKE_PATH("foo") },
-                { FS_MAKE_PATH("foo/./bar/.."), FS_MAKE_PATH("foo") },
-                { FS_MAKE_PATH("foo/bar/../blah"), FS_MAKE_PATH("foo/blah") },
-                { FS_MAKE_PATH("f/../b"), FS_MAKE_PATH("b") },
-                { FS_MAKE_PATH("foo/bar/blah/../.."), FS_MAKE_PATH("foo") },
-                { FS_MAKE_PATH("foo/bar/blah/../../bletch"), FS_MAKE_PATH("foo/bletch") }
+                { FS_PATH(""), FS_PATH("") },
+                { FS_PATH("/"), FS_PATH("/") },
+                { FS_PATH("///"), FS_PATH("/") },
+                { FS_PATH("foo"), FS_PATH("foo") },
+                { FS_PATH("/./foo"), FS_PATH("/foo") },
+                { FS_PATH("foo/bar"), FS_PATH("foo/bar") },
+                { FS_PATH(".."), FS_PATH("..") },
+                { FS_PATH("../.."), FS_PATH("../..") },
+                { FS_PATH("../foo"), FS_PATH("../foo") },
+                { FS_PATH("foo/.."), FS_PATH(".") },
+                { FS_PATH("foo/../bar"), FS_PATH("bar") },
+                { FS_PATH("foo/bar/.."), FS_PATH("foo") },
+                { FS_PATH("foo/./bar/.."), FS_PATH("foo") },
+                { FS_PATH("foo/bar/../blah"), FS_PATH("foo/blah") },
+                { FS_PATH("f/../b"), FS_PATH("b") },
+                { FS_PATH("foo/bar/blah/../.."), FS_PATH("foo") },
+                { FS_PATH("foo/bar/blah/../../bletch"), FS_PATH("foo/bletch") }
         };
 
         fs_error_code_t ec;
@@ -120,26 +120,26 @@ TEST(boost_path, lexically_normal)
 TEST(boost_path, lexically_relative)
 {
         const relative_case_t cases[] = {
-                { FS_MAKE_PATH("/foo"), FS_MAKE_PATH("/foo"), FS_MAKE_PATH(".") },
-                { FS_MAKE_PATH("foo"), FS_MAKE_PATH("foo"), FS_MAKE_PATH(".") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a"), FS_MAKE_PATH("b/c") },
-                { FS_MAKE_PATH("a//b//c"), FS_MAKE_PATH("a"), FS_MAKE_PATH("b/c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b"), FS_MAKE_PATH("c") },
-                { FS_MAKE_PATH("a///b//c"), FS_MAKE_PATH("a//b"), FS_MAKE_PATH("c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH(".") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b/c/x"), FS_MAKE_PATH("..") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b/c/x/y"), FS_MAKE_PATH("../..") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/x"), FS_MAKE_PATH("../b/c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b/x"), FS_MAKE_PATH("../c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/x/y"), FS_MAKE_PATH("../../b/c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/b/x/y"), FS_MAKE_PATH("../../c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/"), FS_MAKE_PATH("b/c") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("a/."), FS_MAKE_PATH("b/c") },
-                { FS_MAKE_PATH("/a/b/c"), FS_MAKE_PATH("/x"), FS_MAKE_PATH("../a/b/c") },
-                { FS_MAKE_PATH("/a/d"), FS_MAKE_PATH("/a/b/c"), FS_MAKE_PATH("../../d") },
-                { FS_MAKE_PATH("/foo/new"), FS_MAKE_PATH("/foo/bar"), FS_MAKE_PATH("../new") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("x"), FS_MAKE_PATH("") },
-                { FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("/a/b/c"), FS_MAKE_PATH("") }
+                { FS_PATH("/foo"), FS_PATH("/foo"), FS_PATH(".") },
+                { FS_PATH("foo"), FS_PATH("foo"), FS_PATH(".") },
+                { FS_PATH("a/b/c"), FS_PATH("a"), FS_PATH("b/c") },
+                { FS_PATH("a//b//c"), FS_PATH("a"), FS_PATH("b/c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b"), FS_PATH("c") },
+                { FS_PATH("a///b//c"), FS_PATH("a//b"), FS_PATH("c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b/c"), FS_PATH(".") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b/c/x"), FS_PATH("..") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b/c/x/y"), FS_PATH("../..") },
+                { FS_PATH("a/b/c"), FS_PATH("a/x"), FS_PATH("../b/c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b/x"), FS_PATH("../c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/x/y"), FS_PATH("../../b/c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/b/x/y"), FS_PATH("../../c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/"), FS_PATH("b/c") },
+                { FS_PATH("a/b/c"), FS_PATH("a/."), FS_PATH("b/c") },
+                { FS_PATH("/a/b/c"), FS_PATH("/x"), FS_PATH("../a/b/c") },
+                { FS_PATH("/a/d"), FS_PATH("/a/b/c"), FS_PATH("../../d") },
+                { FS_PATH("/foo/new"), FS_PATH("/foo/bar"), FS_PATH("../new") },
+                { FS_PATH("a/b/c"), FS_PATH("x"), FS_PATH("") },
+                { FS_PATH("a/b/c"), FS_PATH("/a/b/c"), FS_PATH("") }
         };
 
         fs_error_code_t ec;
@@ -158,9 +158,9 @@ TEST(boost_path, lexically_proximate)
         fs_error_code_t ec;
         fs_path_t       out;
 
-        out = fs_path_lexically_proximate(FS_MAKE_PATH("a/b/c"), FS_MAKE_PATH("x"), &ec);
+        out = fs_path_lexically_proximate(FS_PATH("a/b/c"), FS_PATH("x"), &ec);
         EXPECT_NO_EC(ec);
-        EXPECT_PATH_EQ_LITERAL(out, FS_MAKE_PATH("a/b/c"));
+        EXPECT_PATH_EQ_LITERAL(out, FS_PATH("a/b/c"));
         free(out);
 }
 
