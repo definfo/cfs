@@ -1,0 +1,48 @@
+name: Docs
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  doxygen:
+    name: Build Doxygen HTML
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Install Doxygen + Graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate API reference
+        run: doxygen docs/Doxyfile
+
+      - name: Upload HTML artifact
+        uses: actions/upload-pages-artifact@main
+        with:
+          path: docs/.build/html
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: doxygen
+    runs-on: ubuntu-slim
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@main

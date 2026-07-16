@@ -2,7 +2,7 @@
   description = "C/C++ development environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     flake-compat = {
       url = "github:NixOS/flake-compat";
       flake = false;
@@ -11,12 +11,26 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{
+      self,
+      nixpkgs,
+      flake-compat,
+      flake-parts,
+      treefmt-nix,
+    }:
     # See https://flake.parts/module-arguments for module arguments
     flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
+
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -25,12 +39,23 @@
 
       perSystem =
         {
+          config,
           pkgs,
           ...
         }:
         {
+          # https://github.com/numtide/treefmt-nix
+          treefmt = {
+            projectRootFile = "flake.nix";
+            programs = {
+              clang-format.enable = true;
+              oxfmt.enable = true;
+            };
+          };
+
           devShells.default = pkgs.mkShell {
-            packages = [ pkgs.cmake ];
+            inputsFrom = [ config.treefmt.build.devShell ];
+            packages = [ pkgs.cmake pkgs.clang-tools pkgs.doxygen ];
           };
         };
     };

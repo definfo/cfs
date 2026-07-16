@@ -2,7 +2,13 @@
 .idea/
 .vscode/
 
-# Tests
+.cache/
+
+# Build artifacts
 tests/.build/
+docs/.build/
 tests/.TestRoot/
 Testing/
+
+# Preliminary parity/integration scratch tests (see INTEGRATION.md §5)
+tests/preliminary/
