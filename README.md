@@ -113,17 +113,17 @@ Common equivalents are:
 | `std::filesystem`                 | CFS                                                       |
 | :-------------------------------- | :-------------------------------------------------------- |
 | `std::filesystem::path`           | `fs_path_t` (owned), `fs_cpath_t` (borrowed/read-only)    |
-| `p / q`, `p /= q`                 | `fs_path_append(p, q, ec)`, `fs_path_append_s(&p, q, ec)` |
-| `p += q`                          | `fs_path_concat(p, q, ec)`, `fs_path_concat_s(&p, q, ec)` |
-| `p.lexically_normal()`            | `fs_path_lexically_normal(p, ec)`                         |
-| `p.lexically_relative(base)`      | `fs_path_lexically_relative(p, base, ec)`                 |
-| `p.lexically_proximate(base)`     | `fs_path_lexically_proximate(p, base, ec)`                |
-| `p.parent_path()`, `p.filename()` | `fs_path_parent_path(p, ec)`, `fs_path_filename(p, ec)`   |
-| `p.stem()`, `p.extension()`       | `fs_path_stem(p, ec)`, `fs_path_extension(p, ec)`         |
-| `exists(p)`, `status(p)`          | `fs_exists(p, ec)`, `fs_status(p, ec)`                    |
-| `copy(from, to, options)`         | `fs_copy_opt(from, to, options, ec)`                      |
-| `directory_iterator(p)`           | `fs_directory_iterator(p, ec)`                            |
-| `recursive_directory_iterator(p)` | `fs_recursive_directory_iterator(p, ec)`                  |
+| `p / q`, `p /= q`                 | `fs_path_append`(p, q, ec), `fs_path_append_s`(&p, q, ec) |
+| `p += q`                          | `fs_path_concat`(p, q, ec), `fs_path_concat_s`(&p, q, ec) |
+| `p.lexically_normal()`            | `fs_path_lexically_normal`(p, ec)                         |
+| `p.lexically_relative(base)`      | `fs_path_lexically_relative`(p, base, ec)                 |
+| `p.lexically_proximate(base)`     | `fs_path_lexically_proximate`(p, base, ec)                |
+| `p.parent_path()`, `p.filename()` | `fs_path_parent_path`(p, ec), `fs_path_filename`(p, ec)   |
+| `p.stem()`, `p.extension()`       | `fs_path_stem`(p, ec), `fs_path_extension`(p, ec)         |
+| `exists(p)`, `status(p)`          | `fs_exists`(p, ec), `fs_status`(p, ec)                    |
+| `copy(from, to, options)`         | `fs_copy_opt`(from, to, options, ec)                      |
+| `directory_iterator(p)`           | `fs_directory_iterator`(p, ec)                            |
+| `recursive_directory_iterator(p)` | `fs_recursive_directory_iterator`(p, ec)                  |
 
 See [API inventory](#api-inventory) for the complete function-by-function
 mapping.
@@ -134,7 +134,7 @@ mapping.
 wide on Windows and narrow elsewhere. CFS has two ways to obtain one from a
 `char` spelling, differing in ownership:
 
-|            | `FS_PATH("…")`              | `fs_make_path(p)`                      |
+|            | `FS_PATH`("…")              | `fs_make_path`(p)                      |
 | :--------- | :-------------------------- | :------------------------------------- |
 | Kind       | macro — a path literal      | function — an owned path               |
 | Input      | compile-time string literal | runtime `char *` (`argv`, a buffer, …) |
@@ -167,7 +167,7 @@ path-component iterators.
 Path decomposition and `fs_path_lexically_*` functions are lexical; like
 `std::filesystem::path`, they do not access the filesystem. Existing separator
 spelling is preserved. `fs_path_append` inserts `FS_PREFERRED_SEPARATOR` only
-when a separator is needed; call `fs_path_make_preferred(&path, &ec)` to rewrite
+when a separator is needed; call `fs_path_make_preferred`(&path, &ec) to rewrite
 all separators explicitly.
 
 ### Diagnostics
@@ -221,12 +221,12 @@ entry per `++it` and yields `directory_entry` objects, CFS materializes the
 whole directory up front into a `NULL`-terminated `it.elems` array of
 borrowed `fs_cpath_t` entry paths. Iterate it by direct index — the `NULL`
 terminator is the stop condition — and free each `it.elems[i]` and finally
-`it.elems` (the `FS_DESTROY_DIR_ITER(name, it)` macro performs the same
+`it.elems` (the `FS_DESTROY_DIR_ITER`(name, it) macro performs the same
 teardown).
-For a recursive walk, `fs_recursive_directory_iterator(p, &ec)`
+For a recursive walk, `fs_recursive_directory_iterator`(p, &ec)
 constructs the iterator (same `fs_dir_iter_t` shape, same indexing); then walk
-by direct index, or with `FOR_EACH_ENTRY_IN_RDIR(name, it)` and
-`FS_DESTROY_RDIR_ITER(name, it)` for teardown. `fs_directory_options_follow_directory_symlink`
+by direct index, or with `FOR_EACH_ENTRY_IN_RDIR`(name, it) and
+`FS_DESTROY_RDIR_ITER`(name, it) for teardown. `fs_directory_options_follow_directory_symlink`
 and `fs_directory_options_skip_permission_denied` correspond to the similarly
 named `std::filesystem::directory_options` values.
 
@@ -273,7 +273,7 @@ encoding.)
 
 `cfs.h`'s role around a read is the same object-level prelude — type, size,
 existence, and a symlink's target via `fs_read_symlink` — plus
-`fs_exists(candidate, &ec)` to probe a search path.
+`fs_exists`(candidate, &ec) to probe a search path.
 
 Walk a directory tree recursively:
 
@@ -387,7 +387,7 @@ A function-by-function mapping of the C11 API declared in `cfs.h` to
   `std::error_code` overloads collapse into this single form (see
   [Error handling](#error-handling)).
 - The `_s` suffix marks the `fs_file_status_t`-based overload, mirroring C++'s
-  `is_*(file_status)` and `exists(file_status)` forms. (`fs_status_known(s)` is
+  `is_*(file_status)` and `exists(file_status)` forms. (`fs_status_known`(s) is
   the status-only form and has no `_s` sibling.)
 - The `_opt` suffix marks the options-bearing overload:
   `fs_copy_opt`, `fs_copy_file_opt`, `fs_permissions_opt`,
@@ -479,101 +479,101 @@ if (fs_file_size(p, NULL) == (fs_umax_t)-1)
 
 | `std::filesystem`                  | CFS                  | Notes                                                                                                          |
 | :--------------------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------- |
-| `path(const char*)` constructor    | `fs_make_path(p)`    | locale-dependent narrow→native (`mbstowcs` on Windows)                                                         |
-| `path(std::u8string)` / `u8path()` | `fs_make_path_u8(p)` | UTF-8→native, locale-independent, lossless (`MultiByteToWideChar(CP_UTF8)` on Windows)                         |
-| `path::string()`                   | `fs_path_get(p)`     | native→narrow `char*`, locale-dependent (`wcstombs` on Windows); caller `free`s                                |
-| `path::u8string()`                 | `fs_path_u8(p)`      | native→UTF-8 `char*`, locale-independent, lossless (`WideCharToMultiByte(CP_UTF8)` on Windows); caller `free`s |
+| `path(const char*)` constructor    | `fs_make_path`(p)    | locale-dependent narrow→native (`mbstowcs` on Windows)                                                         |
+| `path(std::u8string)` / `u8path()` | `fs_make_path_u8`(p) | UTF-8→native, locale-independent, lossless (`MultiByteToWideChar(CP_UTF8)` on Windows)                         |
+| `path::string()`                   | `fs_path_get`(p)     | native→narrow `char*`, locale-dependent (`wcstombs` on Windows); caller `free`s                                |
+| `path::u8string()`                 | `fs_path_u8`(p)      | native→UTF-8 `char*`, locale-independent, lossless (`WideCharToMultiByte(CP_UTF8)` on Windows); caller `free`s |
 
 ### Path operations
 
 | `std::filesystem::path`          | CFS                                              |
 | :------------------------------- | :----------------------------------------------- |
-| `path(const path&)` (copy)       | `fs_path_dupe(p, ec)`                            |
-| `operator/=(other)`              | `fs_path_append_s(&p, other, ec)`                |
-| `operator/(p, q)`                | `fs_path_append(p, other, ec)`                   |
-| `operator+=(other)`              | `fs_path_concat_s(&p, other, ec)`                |
-| `operator+(p, q)`                | `fs_path_concat(p, other, ec)`                   |
-| `clear()`                        | `fs_path_clear(&p, ec)`                          |
-| `make_preferred()`               | `fs_path_make_preferred(&p, ec)`                 |
-| `remove_filename()`              | `fs_path_remove_filename(&p, ec)`                |
-| `replace_filename(replacement)`  | `fs_path_replace_filename(&p, replacement, ec)`  |
-| `replace_extension(replacement)` | `fs_path_replace_extension(&p, replacement, ec)` |
-| `compare(other)`                 | `fs_path_compare(p, other, ec)`                  |
-| `lexically_normal()`             | `fs_path_lexically_normal(p, ec)`                |
-| `lexically_relative(base)`       | `fs_path_lexically_relative(p, base, ec)`        |
-| `lexically_proximate(base)`      | `fs_path_lexically_proximate(p, base, ec)`       |
-| `root_name()`                    | `fs_path_root_name(p, ec)`                       |
-| `root_directory()`               | `fs_path_root_directory(p, ec)`                  |
-| `root_path()`                    | `fs_path_root_path(p, ec)`                       |
-| `relative_path()`                | `fs_path_relative_path(p, ec)`                   |
-| `parent_path()`                  | `fs_path_parent_path(p, ec)`                     |
-| `filename()`                     | `fs_path_filename(p, ec)`                        |
-| `stem()`                         | `fs_path_stem(p, ec)`                            |
-| `extension()`                    | `fs_path_extension(p, ec)`                       |
-| `has_root_path()`                | `fs_path_has_root_path(p, ec)`                   |
-| `has_root_name()`                | `fs_path_has_root_name(p, ec)`                   |
-| `has_root_directory()`           | `fs_path_has_root_directory(p, ec)`              |
-| `has_relative_path()`            | `fs_path_has_relative_path(p, ec)`               |
-| `has_parent_path()`              | `fs_path_has_parent_path(p, ec)`                 |
-| `has_filename()`                 | `fs_path_has_filename(p, ec)`                    |
-| `has_stem()`                     | `fs_path_has_stem(p, ec)`                        |
-| `has_extension()`                | `fs_path_has_extension(p, ec)`                   |
-| `is_absolute()`                  | `fs_path_is_absolute(p, ec)`                     |
-| `is_relative()`                  | `fs_path_is_relative(p, ec)`                     |
+| `path(const path&)` (copy)       | `fs_path_dupe`(p, ec)                            |
+| `operator/=(other)`              | `fs_path_append_s`(&p, other, ec)                |
+| `operator/(p, q)`                | `fs_path_append`(p, other, ec)                   |
+| `operator+=(other)`              | `fs_path_concat_s`(&p, other, ec)                |
+| `operator+(p, q)`                | `fs_path_concat`(p, other, ec)                   |
+| `clear()`                        | `fs_path_clear`(&p, ec)                          |
+| `make_preferred()`               | `fs_path_make_preferred`(&p, ec)                 |
+| `remove_filename()`              | `fs_path_remove_filename`(&p, ec)                |
+| `replace_filename(replacement)`  | `fs_path_replace_filename`(&p, replacement, ec)  |
+| `replace_extension(replacement)` | `fs_path_replace_extension`(&p, replacement, ec) |
+| `compare(other)`                 | `fs_path_compare`(p, other, ec)                  |
+| `lexically_normal()`             | `fs_path_lexically_normal`(p, ec)                |
+| `lexically_relative(base)`       | `fs_path_lexically_relative`(p, base, ec)        |
+| `lexically_proximate(base)`      | `fs_path_lexically_proximate`(p, base, ec)       |
+| `root_name()`                    | `fs_path_root_name`(p, ec)                       |
+| `root_directory()`               | `fs_path_root_directory`(p, ec)                  |
+| `root_path()`                    | `fs_path_root_path`(p, ec)                       |
+| `relative_path()`                | `fs_path_relative_path`(p, ec)                   |
+| `parent_path()`                  | `fs_path_parent_path`(p, ec)                     |
+| `filename()`                     | `fs_path_filename`(p, ec)                        |
+| `stem()`                         | `fs_path_stem`(p, ec)                            |
+| `extension()`                    | `fs_path_extension`(p, ec)                       |
+| `has_root_path()`                | `fs_path_has_root_path`(p, ec)                   |
+| `has_root_name()`                | `fs_path_has_root_name`(p, ec)                   |
+| `has_root_directory()`           | `fs_path_has_root_directory`(p, ec)              |
+| `has_relative_path()`            | `fs_path_has_relative_path`(p, ec)               |
+| `has_parent_path()`              | `fs_path_has_parent_path`(p, ec)                 |
+| `has_filename()`                 | `fs_path_has_filename`(p, ec)                    |
+| `has_stem()`                     | `fs_path_has_stem`(p, ec)                        |
+| `has_extension()`                | `fs_path_has_extension`(p, ec)                   |
+| `is_absolute()`                  | `fs_path_is_absolute`(p, ec)                     |
+| `is_relative()`                  | `fs_path_is_relative`(p, ec)                     |
 
 ### Path iteration
 
 | `std::filesystem::path`        | CFS                        |
 | :----------------------------- | :------------------------- |
 | `path::iterator` state         | `fs_path_iter_t`           |
-| `begin()`                      | `fs_path_begin(p, ec)`     |
-| `end()`                        | `fs_path_end(p)`           |
-| `iterator::operator++`         | `fs_path_iter_next(&it)`   |
-| `iterator::operator--`         | `fs_path_iter_prev(&it)`   |
-| `*it`                          | `FS_DEREF_PATH_ITER(it)`   |
-| range-for over components      | `FOR_EACH_PATH_ITER(it)`   |
-| (iterator cleanup / RAII dtor) | `FS_DESTROY_PATH_ITER(it)` |
+| `begin()`                      | `fs_path_begin`(p, ec)     |
+| `end()`                        | `fs_path_end`(p)           |
+| `iterator::operator++`         | `fs_path_iter_next`(&it)   |
+| `iterator::operator--`         | `fs_path_iter_prev`(&it)   |
+| `*it`                          | `FS_DEREF_PATH_ITER`(it)   |
+| range-for over components      | `FOR_EACH_PATH_ITER`(it)   |
+| (iterator cleanup / RAII dtor) | `FS_DESTROY_PATH_ITER`(it) |
 
 ### Filesystem operations (free functions)
 
 | `std::filesystem`                            | CFS                                             |
 | :------------------------------------------- | :---------------------------------------------- |
-| `absolute(p, ec)`                            | `fs_absolute(p, ec)`                            |
-| `canonical(p, ec)`                           | `fs_canonical(p, ec)`                           |
-| `weakly_canonical(p, ec)`                    | `fs_weakly_canonical(p, ec)`                    |
-| `relative(p, base, ec)`                      | `fs_relative(p, base, ec)`                      |
-| `proximate(p, base, ec)`                     | `fs_proximate(p, base, ec)`                     |
-| `copy(from, to, ec)`                         | `fs_copy(from, to, ec)`                         |
-| `copy(from, to, options, ec)`                | `fs_copy_opt(from, to, options, ec)`            |
-| `copy_file(from, to, ec)`                    | `fs_copy_file(from, to, ec)`                    |
-| `copy_file(from, to, options, ec)`           | `fs_copy_file_opt(from, to, options, ec)`       |
-| `copy_symlink(from, to, ec)`                 | `fs_copy_symlink(from, to, ec)`                 |
-| `create_directory(p, ec)`                    | `fs_create_directory(p, ec)`                    |
-| `create_directory(p, existing, ec)`          | `fs_create_directory_cp(p, existing, ec)`       |
-| `create_directories(p, ec)`                  | `fs_create_directories(p, ec)`                  |
-| `create_hard_link(target, link, ec)`         | `fs_create_hard_link(target, link, ec)`         |
-| `create_symlink(target, link, ec)`           | `fs_create_symlink(target, link, ec)`           |
-| `create_directory_symlink(target, link, ec)` | `fs_create_directory_symlink(target, link, ec)` |
-| `current_path(ec)`                           | `fs_current_path(ec)`                           |
-| `current_path(p, ec)`                        | `fs_set_current_path(p, ec)`                    |
-| `exists(file_status)`                        | `fs_exists_s(s)`                                |
-| `exists(p, ec)`                              | `fs_exists(p, ec)`                              |
-| `equivalent(p1, p2, ec)`                     | `fs_equivalent(p1, p2, ec)`                     |
-| `file_size(p, ec)`                           | `fs_file_size(p, ec)`                           |
-| `hard_link_count(p, ec)`                     | `fs_hard_link_count(p, ec)`                     |
-| `last_write_time(p, ec)`                     | `fs_last_write_time(p, ec)`                     |
-| `last_write_time(p, new_time, ec)`           | `fs_set_last_write_time(p, new_time, ec)`       |
-| `permissions(p, prms, ec)`                   | `fs_permissions(p, prms, ec)`                   |
-| `permissions(p, prms, opts, ec)`             | `fs_permissions_opt(p, prms, opts, ec)`         |
-| `read_symlink(p, ec)`                        | `fs_read_symlink(p, ec)`                        |
-| `remove(p, ec)`                              | `fs_remove(p, ec)`                              |
-| `remove_all(p, ec)`                          | `fs_remove_all(p, ec)`                          |
-| `rename(old_p, new_p, ec)`                   | `fs_rename(old_p, new_p, ec)`                   |
-| `resize_file(p, size, ec)`                   | `fs_resize_file(p, size, ec)`                   |
-| `space(p, ec)`                               | `fs_space(p, ec)`                               |
-| `status(p, ec)`                              | `fs_status(p, ec)`                              |
-| `symlink_status(p, ec)`                      | `fs_symlink_status(p, ec)`                      |
-| `temp_directory_path(ec)`                    | `fs_temp_directory_path(ec)`                    |
+| `absolute(p, ec)`                            | `fs_absolute`(p, ec)                            |
+| `canonical(p, ec)`                           | `fs_canonical`(p, ec)                           |
+| `weakly_canonical(p, ec)`                    | `fs_weakly_canonical`(p, ec)                    |
+| `relative(p, base, ec)`                      | `fs_relative`(p, base, ec)                      |
+| `proximate(p, base, ec)`                     | `fs_proximate`(p, base, ec)                     |
+| `copy(from, to, ec)`                         | `fs_copy`(from, to, ec)                         |
+| `copy(from, to, options, ec)`                | `fs_copy_opt`(from, to, options, ec)            |
+| `copy_file(from, to, ec)`                    | `fs_copy_file`(from, to, ec)                    |
+| `copy_file(from, to, options, ec)`           | `fs_copy_file_opt`(from, to, options, ec)       |
+| `copy_symlink(from, to, ec)`                 | `fs_copy_symlink`(from, to, ec)                 |
+| `create_directory(p, ec)`                    | `fs_create_directory`(p, ec)                    |
+| `create_directory(p, existing, ec)`          | `fs_create_directory_cp`(p, existing, ec)       |
+| `create_directories(p, ec)`                  | `fs_create_directories`(p, ec)                  |
+| `create_hard_link(target, link, ec)`         | `fs_create_hard_link`(target, link, ec)         |
+| `create_symlink(target, link, ec)`           | `fs_create_symlink`(target, link, ec)           |
+| `create_directory_symlink(target, link, ec)` | `fs_create_directory_symlink`(target, link, ec) |
+| `current_path(ec)`                           | `fs_current_path`(ec)                           |
+| `current_path(p, ec)`                        | `fs_set_current_path`(p, ec)                    |
+| `exists(file_status)`                        | `fs_exists_s`(s)                                |
+| `exists(p, ec)`                              | `fs_exists`(p, ec)                              |
+| `equivalent(p1, p2, ec)`                     | `fs_equivalent`(p1, p2, ec)                     |
+| `file_size(p, ec)`                           | `fs_file_size`(p, ec)                           |
+| `hard_link_count(p, ec)`                     | `fs_hard_link_count`(p, ec)                     |
+| `last_write_time(p, ec)`                     | `fs_last_write_time`(p, ec)                     |
+| `last_write_time(p, new_time, ec)`           | `fs_set_last_write_time`(p, new_time, ec)       |
+| `permissions(p, prms, ec)`                   | `fs_permissions`(p, prms, ec)                   |
+| `permissions(p, prms, opts, ec)`             | `fs_permissions_opt`(p, prms, opts, ec)         |
+| `read_symlink(p, ec)`                        | `fs_read_symlink`(p, ec)                        |
+| `remove(p, ec)`                              | `fs_remove`(p, ec)                              |
+| `remove_all(p, ec)`                          | `fs_remove_all`(p, ec)                          |
+| `rename(old_p, new_p, ec)`                   | `fs_rename`(old_p, new_p, ec)                   |
+| `resize_file(p, size, ec)`                   | `fs_resize_file`(p, size, ec)                   |
+| `space(p, ec)`                               | `fs_space`(p, ec)                               |
+| `status(p, ec)`                              | `fs_status`(p, ec)                              |
+| `symlink_status(p, ec)`                      | `fs_symlink_status`(p, ec)                      |
+| `temp_directory_path(ec)`                    | `fs_temp_directory_path`(ec)                    |
 
 ### File status & type queries
 
@@ -582,34 +582,34 @@ path overloads match C++'s `path, ec` forms.
 
 | `std::filesystem`   | CFS (`file_status`)         | CFS (path)                    |
 | :------------------ | :-------------------------- | :---------------------------- |
-| `is_block_file`     | `fs_is_block_file_s(s)`     | `fs_is_block_file(p, ec)`     |
-| `is_character_file` | `fs_is_character_file_s(s)` | `fs_is_character_file(p, ec)` |
-| `is_directory`      | `fs_is_directory_s(s)`      | `fs_is_directory(p, ec)`      |
-| `is_fifo`           | `fs_is_fifo_s(s)`           | `fs_is_fifo(p, ec)`           |
-| `is_other`          | `fs_is_other_s(s)`          | `fs_is_other(p, ec)`          |
-| `is_regular_file`   | `fs_is_regular_file_s(s)`   | `fs_is_regular_file(p, ec)`   |
-| `is_socket`         | `fs_is_socket_s(s)`         | `fs_is_socket(p, ec)`         |
-| `is_symlink`        | `fs_is_symlink_s(s)`        | `fs_is_symlink(p, ec)`        |
-| `status_known`      | `fs_status_known(s)`        | —                             |
-| `is_empty(p, ec)`   | —                           | `fs_is_empty(p, ec)`          |
+| `is_block_file`     | `fs_is_block_file_s`(s)     | `fs_is_block_file`(p, ec)     |
+| `is_character_file` | `fs_is_character_file_s`(s) | `fs_is_character_file`(p, ec) |
+| `is_directory`      | `fs_is_directory_s`(s)      | `fs_is_directory`(p, ec)      |
+| `is_fifo`           | `fs_is_fifo_s`(s)           | `fs_is_fifo`(p, ec)           |
+| `is_other`          | `fs_is_other_s`(s)          | `fs_is_other`(p, ec)          |
+| `is_regular_file`   | `fs_is_regular_file_s`(s)   | `fs_is_regular_file`(p, ec)   |
+| `is_socket`         | `fs_is_socket_s`(s)         | `fs_is_socket`(p, ec)         |
+| `is_symlink`        | `fs_is_symlink_s`(s)        | `fs_is_symlink`(p, ec)        |
+| `status_known`      | `fs_status_known`(s)        | —                             |
+| `is_empty(p, ec)`   | —                           | `fs_is_empty`(p, ec)          |
 
 ### Directory iteration
 
 | `std::filesystem`                              | CFS                                                                    |
 | :--------------------------------------------- | :--------------------------------------------------------------------- |
 | `directory_iterator` state                     | `fs_dir_iter_t`                                                        |
-| `directory_iterator(p, ec)`                    | `fs_directory_iterator(p, ec)`                                         |
-| `directory_iterator(p, options, ec)`           | `fs_directory_iterator_opt(p, options, ec)`                            |
-| `directory_iterator::operator++`               | `fs_dir_iter_next(&it)`                                                |
-| `directory_iterator::operator--`               | `fs_dir_iter_prev(&it)`                                                |
+| `directory_iterator(p, ec)`                    | `fs_directory_iterator`(p, ec)                                         |
+| `directory_iterator(p, options, ec)`           | `fs_directory_iterator_opt`(p, options, ec)                            |
+| `directory_iterator::operator++`               | `fs_dir_iter_next`(&it)                                                |
+| `directory_iterator::operator--`               | `fs_dir_iter_prev`(&it)                                                |
 | `recursive_directory_iterator` state           | `fs_recursive_dir_iter_t`                                              |
-| `recursive_directory_iterator(p, ec)`          | `fs_recursive_directory_iterator(p, ec)`                               |
-| `recursive_directory_iterator(p, options, ec)` | `fs_recursive_directory_iterator_opt(p, options, ec)`                  |
-| `recursive_directory_iterator::operator++`     | `fs_recursive_dir_iter_next(&it)` (alias)                              |
-| `recursive_directory_iterator::operator--`     | `fs_recursive_dir_iter_prev(&it)` (alias)                              |
-| `*it` (entry path)                             | `FS_DEREF_DIR_ITER(it)` / `FS_DEREF_RDIR_ITER(it)`                     |
-| range-for over entries                         | `FOR_EACH_ENTRY_IN_DIR(name, it)` / `FOR_EACH_ENTRY_IN_RDIR(name, it)` |
-| (iterator cleanup / RAII dtor)                 | `FS_DESTROY_DIR_ITER(name, it)` / `FS_DESTROY_RDIR_ITER(name, it)`     |
+| `recursive_directory_iterator(p, ec)`          | `fs_recursive_directory_iterator`(p, ec)                               |
+| `recursive_directory_iterator(p, options, ec)` | `fs_recursive_directory_iterator_opt`(p, options, ec)                  |
+| `recursive_directory_iterator::operator++`     | `fs_recursive_dir_iter_next`(&it) (alias)                              |
+| `recursive_directory_iterator::operator--`     | `fs_recursive_dir_iter_prev`(&it) (alias)                              |
+| `*it` (entry path)                             | `FS_DEREF_DIR_ITER`(it) / `FS_DEREF_RDIR_ITER`(it)                     |
+| range-for over entries                         | `FOR_EACH_ENTRY_IN_DIR`(name, it) / `FOR_EACH_ENTRY_IN_RDIR`(name, it) |
+| (iterator cleanup / RAII dtor)                 | `FS_DESTROY_DIR_ITER`(name, it) / `FS_DESTROY_RDIR_ITER`(name, it)     |
 
 NOTE: `fs_recursive_directory_iterator` (and `_opt`) construct the iterator —
 they materialize the whole tree into the same `NULL`-terminated `it.elems`
@@ -626,7 +626,7 @@ function, then walk by direct index or the macro — unlike C++
 | `std::filesystem`     | CFS                    |
 | :-------------------- | :--------------------- |
 | `true` / `false`      | `FS_TRUE` / `FS_FALSE` |
-| portable path literal | `FS_PATH(p)`           |
+| portable path literal | `FS_PATH`(p)           |
 
 ### File I/O (`cio.h`, beyond `std::filesystem`)
 
@@ -641,10 +641,10 @@ path encoding (`fs_char_t`).
 
 | CFS (`cio.h`)                     | Purpose                                                |
 | :-------------------------------- | :----------------------------------------------------- |
-| `io_read_file(p, &len, ec)`       | whole-file read -> malloc'd, NUL-terminated buffer     |
-| `io_write_file(p, buf, len, ec)`  | whole-file write (create/truncate)                     |
-| `io_append_file(p, buf, len, ec)` | whole-file append                                      |
-| `io_file_open(p, mode, ec)`       | open a streaming handle (`io_file_t`)                  |
+| `io_read_file`(p, &len, ec)       | whole-file read -> malloc'd, NUL-terminated buffer     |
+| `io_write_file`(p, buf, len, ec)  | whole-file write (create/truncate)                     |
+| `io_append_file`(p, buf, len, ec) | whole-file append                                      |
+| `io_file_open`(p, mode, ec)       | open a streaming handle (`io_file_t`)                  |
 | `io_file_read` / `io_file_write`  | chunked read/write via a handle                        |
 | `io_file_getc` / `io_file_gets`   | byte / line read via a handle                          |
 | `io_file_close`                   | close + free a handle                                  |
@@ -656,7 +656,7 @@ These parts of `std::filesystem` have no direct CFS equivalent and are
 intentionally omitted; the differences are summarized above.
 
 - `directory_entry` — iteration yields borrowed entry paths directly via
-  `FS_DEREF_DIR_ITER`; query an entry's attributes with `fs_status(entry, ec)`
+  `FS_DEREF_DIR_ITER`; query an entry's attributes with `fs_status`(entry, ec)
   etc. There is no cached-attribute wrapper.
 - `filesystem_error` — failures surface through `fs_error_code_t`.
 - `path::native()` / `path::c_str()` — the `fs_path_t` / `fs_cpath_t` value _is_
