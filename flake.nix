@@ -48,6 +48,7 @@
           treefmt = {
             projectRootFile = "flake.nix";
             programs = {
+              clang-format.enable = true;
               oxfmt.enable = true;
             };
           };

@@ -4,33 +4,32 @@
  * Self-contained example: defines CFS_IMPLEMENTATION in its one translation
  * unit. In a real project, define CFS_IMPLEMENTATION in exactly one TU and
  * include <cfs/cfs.h> normally elsewhere (see README "Include discipline").
- *
- * Build: cc -Iinclude examples/build_and_print_path.c -o build_and_print_path
  */
 
 #define CFS_IMPLEMENTATION
-#include <stdlib.h>
-#include <stdio.h>
 #include <cfs/cfs.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int main(void)
+int
+main (void)
 {
         fs_error_code_t ec;
         fs_path_t path;
         char *display;
 
-        path = fs_path_append(FS_PATH("output"),
-                              FS_PATH("report.txt"),
-                              &ec);
-        if (ec.type != fs_error_type_none) {
-                fprintf(stderr, "path error: %s\n", ec.msg);
-                return 1;
-        }
+        path
+            = fs_path_append (FS_PATH ("output"), FS_PATH ("report.txt"), &ec);
+        if (ec.type != fs_error_type_none)
+                {
+                        fprintf (stderr, "path error: %s\n", ec.msg);
+                        return 1;
+                }
 
-        display = fs_path_get(path);
-        printf("%s\n", display);
+        display = fs_path_get (path);
+        printf ("%s\n", display);
 
-        free(display);
-        free(path);
+        free (display);
+        free (path);
         return 0;
 }

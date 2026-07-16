@@ -1,6 +1,8 @@
 # CFS: cross-platform filesystem API in C11
 
-A single-header C11 implementation of `std::filesystem`/`Boost.Filesystem`, with a separate [`cio.h`](include/cfs/cio.h) byte-level file-I/O extension.
+A C11 filesystem library modeled after `std::filesystem`/`Boost.Filesystem`,
+split into [`cfs.h`](include/cfs/cfs.h) for paths/filesystem operations and
+[`cio.h`](include/cfs/cio.h) for optional byte-level file I/O.
 
 ## Usage
 
@@ -10,37 +12,37 @@ configuration, diagnostics, and examples.
 
 ### Name
 
-**CFS** — a single-header C11 filesystem API modeled after C++17
-`std::filesystem` and Boost.Filesystem.
+**CFS** — filesystem API modeled after C++17 `std::filesystem`
+and Boost.Filesystem, along with simple synchronous I/O API.
 
 ### Synopsis
 
-Use the declarations in every translation unit that calls CFS:
+Use the declarations in every translation unit that calls CFS. Include
+`<cfs/cfs.h>` for the filesystem API. Optional: include `<cfs/cio.h>`
+when you also need the byte-level I/O extension (`cio.h` includes `cfs.h`):
 
 ```c
 #include <cfs/cfs.h>
+/* #include <cfs/cio.h> */
 ```
 
-Emit the implementation in **exactly one** translation unit:
+Emit the implementation in **exactly one** translation unit. Define
+`CIO_IMPLEMENTATION` as well only if your program uses `cio.h`:
 
 ```c
-/* cfs.c -- the only file that defines CFS_IMPLEMENTATION. */
+/* cfs.c -- the only file that defines implementation macros. */
 #define CFS_IMPLEMENTATION
 #include <cfs/cfs.h>
-```
 
-Compile that implementation object with the rest of your program:
-
-```sh
-cc -std=c11 -I/path/to/cfs/include -c cfs.c
-cc -std=c11 -I/path/to/cfs/include -c main.c
-cc main.o cfs.o -o program
+/* #define CIO_IMPLEMENTATION */
+/* #include <cfs/cio.h> */
 ```
 
 ### Installation
 
 Copy or vendor the `include/cfs` directory somewhere on your
-compiler include path, then include `<cfs/cfs.h>`.
+compiler include path, then include `<cfs/cfs.h>` and, when needed,
+`<cfs/cio.h>`.
 
 ```sh
 cc -std=c11 -I/path/to/cfs/include ...
@@ -54,36 +56,47 @@ target_include_directories(my_program PRIVATE /path/to/cfs/include)
 target_sources(my_program PRIVATE cfs.c)
 ```
 
-where `cfs.c` contains `#define CFS_IMPLEMENTATION` as shown in the synopsis.
+where `cfs.c` contains `#define CFS_IMPLEMENTATION` (and
+`#define CIO_IMPLEMENTATION` if you use `cio.h`) as shown in the synopsis.
 
 ### Include discipline
 
-`cfs.h` uses the single-header style: the same file contains declarations and,
-when requested, definitions. The declarations are guarded by `CFS_H`; the
-implementation is guarded separately by `CFS_IMPLEMENTATION_ONCE`.
+The public API is split across two stb-style headers. `cfs.h` contains the core
+filesystem declarations and optional definitions; `cio.h` is a separate,
+optional byte-level I/O extension that includes `cfs.h`. Declarations are
+guarded by `CFS_H` / `CIO_H`; implementation blocks are guarded separately by
+`CFS_IMPLEMENTATION_ONCE` / `CIO_IMPLEMENTATION_ONCE`.
 
-- Include `<cfs/cfs.h>` normally in headers and source files that need the API.
-- Define `CFS_IMPLEMENTATION` before including `<cfs/cfs.h>` in exactly one
-  `.c` file.
-- Do not define `CFS_IMPLEMENTATION` in more than one translation unit; doing
-  so emits duplicate external symbols at link time.
-- Do not define `CFS_IMPLEMENTATION` in a public header; every source file that
+- Include `<cfs/cfs.h>` normally in headers and source files that need the
+  filesystem API.
+- Include `<cfs/cio.h>` where you need byte-level file I/O. You do not need to
+  include both headers just to use `cio.h`, because `cio.h` includes `cfs.h`.
+- Define `CFS_IMPLEMENTATION` before including `<cfs/cfs.h>` or `<cfs/cio.h>`
+  in exactly one `.c` file.
+- If you use `cio.h`, also define `CIO_IMPLEMENTATION` before including
+  `<cfs/cio.h>` in exactly one `.c` file. `cio.h`'s bodies call `fs_path_get`,
+  so the program must also emit or link the `cfs.h` implementation.
+- Do not define either implementation macro in more than one translation unit;
+  doing so emits duplicate external symbols at link time.
+- Do not define implementation macros in a public header; every source file that
   includes that header would emit the implementation.
 
-Because the implementation has its own one-shot guard, it is harmless if another
-header included `<cfs/cfs.h>` for declarations before the implementation file
-defines `CFS_IMPLEMENTATION`; the function bodies are still emitted once.
+Because each implementation has its own one-shot guard, it is harmless if
+another header included declarations before the implementation file defines the
+corresponding implementation macro; the function bodies are still emitted once.
 
 ### Configuration macros
 
-Define CFS configuration macros before the first include of `<cfs/cfs.h>` in
-the translation unit that emits the implementation.
+Define CFS configuration macros before the first include of `<cfs/cfs.h>` (or
+`<cfs/cio.h>`, which includes it) in the translation unit that emits the
+implementation.
 
 | Macro                                             | Meaning                                                                                                                                                                                                                   |
 | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `CFS_IMPLEMENTATION`                              | Emit function bodies from `cfs.h`; define in one translation unit only.                                                                                                                                                   |
+| `CIO_IMPLEMENTATION`                              | Emit function bodies from `cio.h`; define in one translation unit only if you use the byte-level I/O extension.                                                                                                           |
 | `CFS_VALIDATE_ARGUMENTS`                          | Defaults to `1`. When enabled, required `NULL` path arguments report `fs_cfs_error_invalid_argument` instead of being dereferenced, even with `NDEBUG`. Define to `0` only if unchecked release-build behavior is wanted. |
-| `_WIN32_WINNT`                                    | Selects the Windows API level used by the implementation. Older Windows support can be checked by lowering this value.                                                                                                    |
+| `_WIN32_WINNT`                                    | Selects the Windows API level used by the implementation. Lower values compile-check older fallback paths; CI covers current Windows runners only.                                                                        |
 | `_GNU_SOURCE`, `_POSIX_C_SOURCE`, `_XOPEN_SOURCE` | Optional POSIX feature-test macros. Define them before any system header if your program wants the native interfaces they expose. CFS builds without requiring GNU extensions.                                            |
 
 ### Description
@@ -121,7 +134,7 @@ mapping.
 wide on Windows and narrow elsewhere. CFS has two ways to obtain one from a
 `char` spelling, differing in ownership:
 
-|            | `FS_PATH("…")`         | `fs_make_path(p)`                      |
+|            | `FS_PATH("…")`              | `fs_make_path(p)`                      |
 | :--------- | :-------------------------- | :------------------------------------- |
 | Kind       | macro — a path literal      | function — an owned path               |
 | Input      | compile-time string literal | runtime `char *` (`argv`, a buffer, …) |
@@ -209,7 +222,8 @@ whole directory up front into a `NULL`-terminated `it.elems` array of
 borrowed `fs_cpath_t` entry paths. Iterate it by direct index — the `NULL`
 terminator is the stop condition — and free each `it.elems[i]` and finally
 `it.elems` (the `FS_DESTROY_DIR_ITER(name, it)` macro performs the same
-teardown). For a recursive walk, `fs_recursive_directory_iterator(p, &ec)`
+teardown).
+For a recursive walk, `fs_recursive_directory_iterator(p, &ec)`
 constructs the iterator (same `fs_dir_iter_t` shape, same indexing); then walk
 by direct index, or with `FOR_EACH_ENTRY_IN_RDIR(name, it)` and
 `FS_DESTROY_RDIR_ITER(name, it)` for teardown. `fs_directory_options_follow_directory_symlink`
@@ -242,9 +256,8 @@ path encoding (`fs_char_t`).
 
 - **Whole-file.** See [`examples/read_file_size_based.c`](examples/read_file_size_based.c).
   `io_read_file` opens, sizes, and reads the file into one `malloc`'d,
-  NUL-terminated buffer (the size-based read used throughout `sac_c_parser`'s
-  `mio_read_file`, `ToString`, `Paras`). It fails cleanly on a non-openable
-  path (e.g. a directory → `EISDIR`).
+  NUL-terminated buffer. It fails cleanly on a non-openable path (e.g. a
+  directory → `EISDIR`).
 - **Stream (non-seekable or unbounded).** See [`examples/read_file_stream.c`](examples/read_file_stream.c).
   `io_file_read` in fixed chunks, looping until EOF — for pipes, fifos,
   sockets, and any source with no size to preallocate.
@@ -306,8 +319,9 @@ unequal `fs_file_size`, then compare contents incrementally with
 Stream a file to a file:
 
 See [`examples/write_file_stream.c`](examples/write_file_stream.c).
-The write counterpart of `read_file_stream.c`: `io_file_open` / `read` /
-`write` (cio) stream the bytes in chunks; `cfs.h` builds the path.
+The write counterpart of `read_file_stream.c`: `io_file_open` /
+`io_file_read` / `io_file_write` (cio) stream the bytes in chunks; `cfs.h`
+builds the path.
 
 Compare, then write (skip if unchanged):
 
@@ -335,17 +349,19 @@ cmake --build tests/.build
 ctest --test-dir tests/.build
 ```
 
-## OS requirements
+## OS requirements and tested platforms
 
-| Windows           | Linux | macOS              |
-| :---------------- | :---- | :----------------- |
-| Windows **95+**\* | Any   | macOS (**Darwin**) |
+| Windows                                    | Linux                                          | macOS                                           |
+| :----------------------------------------- | :--------------------------------------------- | :---------------------------------------------- |
+| Windows targets supported by the toolchain | POSIX/Linux targets supported by the toolchain | Darwin/macOS targets supported by the toolchain |
 
-Older Windows versions are checked by modifying the `_WIN32_WINNT` value.
+Older Windows API availability can be compile-checked by lowering the
+`_WIN32_WINNT` value; CI does not cover historical Windows releases.
 
 Linux, macOS, and Windows are tested in CI with CTest (see
-`.github/workflows/`). Some specific fixes are implemented for `FreeBSD`, whose
-compatibility is not covered by CI.
+`.github/workflows/`; currently Ubuntu 26.04 x64/ARM, macOS 26 Intel/ARM, and
+Windows 2025 / Windows 11 ARM runners). Some specific fixes are implemented
+for `FreeBSD`, whose compatibility is not covered by CI.
 
 ## Differences with std::filesystem
 
@@ -418,12 +434,15 @@ collapses both into a **single** function with an **optional** trailing
 `ec.type` selects the domain (`fs_error_type_none` / `_cfs` / `_system`;
 see [Diagnostics](#diagnostics)). Passing `NULL` is crash-safe but does
 **not** mean the call cannot fail — it discards the failure details, so you
-must rely on the return value. It is correct only when that return is an
-unambiguous, checked sentinel:
+must rely on the return value. Many operations use a sentinel for errors, but
+some sentinels are also valid benign outcomes (for example, a missing path or
+an already-existing directory). Pass `&ec` whenever you need to distinguish
+failure from those cases:
 
 - `fs_exists` / `fs_is_*` / `fs_status` → `FS_FALSE` / `fs_file_type_not_found`
 - `fs_file_size` → `(fs_umax_t)-1`
-- `fs_remove` / `fs_create_directory` → `FS_FALSE`
+- `fs_remove` / `fs_create_directory` → `FS_FALSE` (also returned for benign
+  "nothing removed" / "already exists" outcomes)
 - `fs_path_append` / `fs_canonical` / `fs_path_dupe` → `NULL`
 
 Do **not** pass `NULL` and ignore the return — the failure is then silent.
@@ -458,12 +477,12 @@ if (fs_file_size(p, NULL) == (fs_umax_t)-1)
 
 ### Path construction & conversion
 
-| `std::filesystem`               | CFS               | Notes                                                         |
-| :------------------------------ | :---------------- | :------------------------------------------------------------ |
-| `path(const char*)` constructor | `fs_make_path(p)`   | locale-dependent narrow→native (`mbstowcs` on Windows)        |
-| `path(std::u8string)` / `u8path()` | `fs_make_path_u8(p)` | UTF-8→native, locale-independent, lossless (`MultiByteToWideChar(CP_UTF8)` on Windows) |
-| `path::string()`                | `fs_path_get(p)`    | native→narrow `char*`, locale-dependent (`wcstombs` on Windows); caller `free`s |
-| `path::u8string()`              | `fs_path_u8(p)`     | native→UTF-8 `char*`, locale-independent, lossless (`WideCharToMultiByte(CP_UTF8)` on Windows); caller `free`s |
+| `std::filesystem`                  | CFS                  | Notes                                                                                                          |
+| :--------------------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `path(const char*)` constructor    | `fs_make_path(p)`    | locale-dependent narrow→native (`mbstowcs` on Windows)                                                         |
+| `path(std::u8string)` / `u8path()` | `fs_make_path_u8(p)` | UTF-8→native, locale-independent, lossless (`MultiByteToWideChar(CP_UTF8)` on Windows)                         |
+| `path::string()`                   | `fs_path_get(p)`     | native→narrow `char*`, locale-dependent (`wcstombs` on Windows); caller `free`s                                |
+| `path::u8string()`                 | `fs_path_u8(p)`      | native→UTF-8 `char*`, locale-independent, lossless (`WideCharToMultiByte(CP_UTF8)` on Windows); caller `free`s |
 
 ### Path operations
 
@@ -576,21 +595,21 @@ path overloads match C++'s `path, ec` forms.
 
 ### Directory iteration
 
-| `std::filesystem`                              | CFS                                                          |
-| :--------------------------------------------- | :----------------------------------------------------------- |
-| `directory_iterator` state                     | `fs_dir_iter_t`                                              |
-| `directory_iterator(p, ec)`                    | `fs_directory_iterator(p, ec)`                               |
-| `directory_iterator(p, options, ec)`           | `fs_directory_iterator_opt(p, options, ec)`                  |
-| `directory_iterator::operator++`               | `fs_dir_iter_next(&it)`                                      |
-| `directory_iterator::operator--`               | `fs_dir_iter_prev(&it)`                                      |
-| `recursive_directory_iterator` state           | `fs_recursive_dir_iter_t`                                    |
-| `recursive_directory_iterator(p, ec)`          | `fs_recursive_directory_iterator(p, ec)`                     |
-| `recursive_directory_iterator(p, options, ec)` | `fs_recursive_directory_iterator_opt(p, options, ec)`        |
-| `recursive_directory_iterator::operator++`     | `fs_recursive_dir_iter_next(it)` (alias)                     |
-| `recursive_directory_iterator::operator--`     | `fs_recursive_dir_iter_prev(it)` (alias)                     |
-| `*it` (entry path)                             | `FS_DEREF_DIR_ITER(it)` / `FS_DEREF_RDIR_ITER(it)`           |
-| range-for over entries                         | `FOR_EACH_ENTRY_IN_DIR(name, it)` / `FOR_EACH_ENTRY_IN_RDIR` |
-| (iterator cleanup / RAII dtor)                 | `FS_DESTROY_DIR_ITER(name, it)` / `FS_DESTROY_RDIR_ITER`     |
+| `std::filesystem`                              | CFS                                                                    |
+| :--------------------------------------------- | :--------------------------------------------------------------------- |
+| `directory_iterator` state                     | `fs_dir_iter_t`                                                        |
+| `directory_iterator(p, ec)`                    | `fs_directory_iterator(p, ec)`                                         |
+| `directory_iterator(p, options, ec)`           | `fs_directory_iterator_opt(p, options, ec)`                            |
+| `directory_iterator::operator++`               | `fs_dir_iter_next(&it)`                                                |
+| `directory_iterator::operator--`               | `fs_dir_iter_prev(&it)`                                                |
+| `recursive_directory_iterator` state           | `fs_recursive_dir_iter_t`                                              |
+| `recursive_directory_iterator(p, ec)`          | `fs_recursive_directory_iterator(p, ec)`                               |
+| `recursive_directory_iterator(p, options, ec)` | `fs_recursive_directory_iterator_opt(p, options, ec)`                  |
+| `recursive_directory_iterator::operator++`     | `fs_recursive_dir_iter_next(&it)` (alias)                              |
+| `recursive_directory_iterator::operator--`     | `fs_recursive_dir_iter_prev(&it)` (alias)                              |
+| `*it` (entry path)                             | `FS_DEREF_DIR_ITER(it)` / `FS_DEREF_RDIR_ITER(it)`                     |
+| range-for over entries                         | `FOR_EACH_ENTRY_IN_DIR(name, it)` / `FOR_EACH_ENTRY_IN_RDIR(name, it)` |
+| (iterator cleanup / RAII dtor)                 | `FS_DESTROY_DIR_ITER(name, it)` / `FS_DESTROY_RDIR_ITER(name, it)`     |
 
 NOTE: `fs_recursive_directory_iterator` (and `_opt`) construct the iterator —
 they materialize the whole tree into the same `NULL`-terminated `it.elems`
@@ -607,28 +626,29 @@ function, then walk by direct index or the macro — unlike C++
 | `std::filesystem`     | CFS                    |
 | :-------------------- | :--------------------- |
 | `true` / `false`      | `FS_TRUE` / `FS_FALSE` |
-| portable path literal | `FS_PATH(p)`      |
+| portable path literal | `FS_PATH(p)`           |
 
 ### File I/O (`cio.h`, beyond `std::filesystem`)
 
 `cfs.h` mirrors `std::filesystem`, which does not read or write file
 contents. The separate header `cio.h` provides that byte-level layer so a
-program can do all its file/path I/O through CFS. It is a single-header
-extension with its own `CIO_IMPLEMENTATION` guard (define it in exactly one
-TU); its bodies call `fs_path_get`, so either define `CFS_IMPLEMENTATION` in
-the same TU or link a TU that does. File contents are bytes (`char`),
-independent of the path encoding (`fs_char_t`).
+program can do all its file/path I/O through CFS. It follows the same
+stb-style implementation pattern with its own `CIO_IMPLEMENTATION` guard
+(define it in exactly one translation unit or TU); its bodies call
+`fs_path_get`, so either define `CFS_IMPLEMENTATION` in the same TU or
+link a TU that does. File contents are bytes (`char`), independent of the
+path encoding (`fs_char_t`).
 
-| CFS (`cio.h`)                       | Purpose                                                   |
-| :------------------------------------- | :-------------------------------------------------------- |
-| `io_read_file(p, &len, ec)`         | whole-file read -> malloc'd, NUL-terminated buffer        |
-| `io_write_file(p, buf, len, ec)`    | whole-file write (create/truncate)                        |
-| `io_append_file(p, buf, len, ec)`   | whole-file append                                         |
-| `io_file_open(p, mode, ec)`         | open a streaming handle (`io_file_t`)                  |
-| `io_file_read` / `io_file_write` | chunked read/write via a handle                           |
-| `io_file_getc` / `io_file_gets`  | byte / line read via a handle                             |
-| `io_file_close`                     | close + free a handle                                     |
-| `io_file_mode_t`                    | `io_file_mode_read` / `_write` / `_append` (+ `_text`) |
+| CFS (`cio.h`)                     | Purpose                                                |
+| :-------------------------------- | :----------------------------------------------------- |
+| `io_read_file(p, &len, ec)`       | whole-file read -> malloc'd, NUL-terminated buffer     |
+| `io_write_file(p, buf, len, ec)`  | whole-file write (create/truncate)                     |
+| `io_append_file(p, buf, len, ec)` | whole-file append                                      |
+| `io_file_open(p, mode, ec)`       | open a streaming handle (`io_file_t`)                  |
+| `io_file_read` / `io_file_write`  | chunked read/write via a handle                        |
+| `io_file_getc` / `io_file_gets`   | byte / line read via a handle                          |
+| `io_file_close`                   | close + free a handle                                  |
+| `io_file_mode_t`                  | `io_file_mode_read` / `_write` / `_append` (+ `_text`) |
 
 ### Not modeled
 
